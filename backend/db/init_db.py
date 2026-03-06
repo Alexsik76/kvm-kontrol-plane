@@ -15,7 +15,7 @@ application), so it works both locally and inside Docker:
 import asyncio
 import logging
 
-from sqlalchemy import select
+from sqlmodel import select
 
 from core.config import settings
 from core.security import hash_password

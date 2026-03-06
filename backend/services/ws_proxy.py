@@ -46,7 +46,7 @@ import websockets
 import websockets.exceptions
 from fastapi import WebSocket, WebSocketDisconnect
 from jose import JWTError
-from sqlalchemy import select
+from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.security import verify_token

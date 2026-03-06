@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from sqlmodel import Field, SQLModel
 
 
 class NodeStatus(str, Enum):
@@ -20,7 +20,7 @@ class NodeStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
-class KvmNodeBase(BaseModel):
+class KvmNodeBase(SQLModel):
     """Shared fields between create and read schemas."""
 
     name: str = Field(..., min_length=1, max_length=64, examples=["raspberrypi-01"])
@@ -45,7 +45,7 @@ class KvmNodeCreate(KvmNodeBase):
     )
 
 
-class KvmNodeUpdate(BaseModel):
+class KvmNodeUpdate(SQLModel):
     """Request body for partial update — all fields are optional."""
 
     name: Optional[str] = Field(None, min_length=1, max_length=64)
@@ -72,7 +72,7 @@ class KvmNodeRead(KvmNodeBase):
     model_config = {"from_attributes": True}
 
 
-class NodeStatusRead(BaseModel):
+class NodeStatusRead(SQLModel):
     """Lightweight status response for GET /nodes/{id}/status."""
 
     id: uuid.UUID

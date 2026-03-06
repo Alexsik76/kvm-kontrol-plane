@@ -7,13 +7,15 @@ SQLAlchemy ORM model for the ``users`` table.
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, DateTime, String, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import TYPE_CHECKING
+import sqlalchemy as sa
+from sqlmodel import Field, Relationship, SQLModel
 
-from db.base import Base
+if TYPE_CHECKING:
+    from models.user_node_permission import UserNodePermission
 
 
-class User(Base):
+class User(SQLModel, table=True):
     """Represents an authenticated user of the Control Plane.
 
     Columns
@@ -33,30 +35,24 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    username: Mapped[str] = mapped_column(
-        String(64), unique=True, nullable=False, index=True
-    )
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
-    )
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        nullable=False,
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    username: str = Field(max_length=64, unique=True, nullable=False, index=True)
+    email: str = Field(max_length=255, unique=True, nullable=False, index=True)
+    hashed_password: str = Field(max_length=255, nullable=False)
+    is_active: bool = Field(default=True, nullable=False)
+    is_superuser: bool = Field(default=False, nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False),
     )
 
     # Back-reference to the permission join table.
-    node_permissions: Mapped[list["UserNodePermission"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
-        "UserNodePermission",
+    node_permissions: list["UserNodePermission"] = Relationship(
         back_populates="user",
-        foreign_keys="UserNodePermission.user_id",
-        cascade="all, delete-orphan",
+        sa_relationship_kwargs={
+            "cascade": "all, delete-orphan",
+            "foreign_keys": "UserNodePermission.user_id",
+        },
     )
 
     def __repr__(self) -> str:

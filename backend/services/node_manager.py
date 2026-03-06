@@ -11,7 +11,7 @@ All functions accept an AsyncSession injected by the FastAPI Depends chain.
 import uuid
 from typing import Optional, Sequence
 
-from sqlalchemy import select
+from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.kvm_node import KvmNode

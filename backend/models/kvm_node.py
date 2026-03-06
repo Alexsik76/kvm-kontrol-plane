@@ -9,11 +9,13 @@ from datetime import UTC, datetime
 from enum import Enum as PyEnum
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, Integer, String, Uuid, Text
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlmodel import Column, Field, Relationship, SQLModel
+from typing import TYPE_CHECKING
 
-from db.base import Base
+if TYPE_CHECKING:
+    from models.user_node_permission import UserNodePermission
 
 
 class NodeStatus(str, PyEnum):
@@ -27,7 +29,7 @@ class NodeStatus(str, PyEnum):
     UNKNOWN = "unknown"
 
 
-class KvmNode(Base):
+class KvmNode(SQLModel, table=True):
     """Represents a single Raspberry Pi KVM node.
 
     The ``internal_ip`` and ports are used by backend services to communicate
@@ -51,39 +53,39 @@ class KvmNode(Base):
 
     __tablename__ = "kvm_nodes"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    name: str = Field(max_length=64, unique=True, nullable=False)
+    internal_ip: str = Field(max_length=45, nullable=False)  # IPv4/IPv6
+    ws_port: int = Field(default=8080, nullable=False)
+    mediamtx_api_port: int = Field(default=9997, nullable=False)
+    stream_name: str = Field(
+        max_length=64,
+        default="kvm",
+        sa_column_kwargs={"server_default": "kvm"},
+        nullable=False,
     )
-    name: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
-    internal_ip: Mapped[str] = mapped_column(String(45), nullable=False)  # IPv4/IPv6
-    ws_port: Mapped[int] = mapped_column(Integer, default=8080, nullable=False)
-    mediamtx_api_port: Mapped[int] = mapped_column(
-        Integer, default=9997, nullable=False
-    )
-    stream_name: Mapped[str] = mapped_column(
-        String(64), default="kvm", server_default="kvm", nullable=False
-    )
-    status: Mapped[NodeStatus] = mapped_column(
-        Enum(NodeStatus, name="node_status"),
+    status: NodeStatus = Field(
         default=NodeStatus.UNKNOWN,
-        nullable=False,
+        sa_column=Column(
+            sa.Enum(NodeStatus, name="node_status"),
+            nullable=False,
+            default=NodeStatus.UNKNOWN,
+        ),
     )
-    machine_info: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    screenshot: Mapped[str | None] = mapped_column(Text, nullable=True)
+    machine_info: dict | None = Field(default=None, sa_column=Column(JSONB))
+    screenshot: str | None = Field(default=None, sa_column=Column(sa.Text))
     # Optional[X] inside Mapped[] works on SA>=2.0.41 / Python 3.14
-    last_seen_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
+    last_seen_at: Optional[datetime] = Field(
+        default=None, sa_column=Column(sa.DateTime(timezone=True))
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        nullable=False,
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(sa.DateTime(timezone=True), nullable=False),
     )
 
-    user_permissions: Mapped[list["UserNodePermission"]] = relationship(  # type: ignore[name-defined]
-        "UserNodePermission",
+    user_permissions: list["UserNodePermission"] = Relationship(  # type: ignore[name-defined]
         back_populates="node",
-        cascade="all, delete-orphan",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
 
     def __repr__(self) -> str:

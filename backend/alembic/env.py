@@ -37,12 +37,12 @@ if config.config_file_name is not None:
 # env.py runs in a special context where the application's sys.path is set up
 # by Alembic itself. noqa: E402 suppressions are intentional.
 # ---------------------------------------------------------------------------
-from db.base import Base  # noqa: E402
+from sqlmodel import SQLModel  # noqa: E402
 import models.user  # noqa: E402, F401
 import models.kvm_node  # noqa: E402, F401
 import models.user_node_permission  # noqa: E402, F401
 
-target_metadata = Base.metadata
+target_metadata = SQLModel.metadata
 
 
 # ---------------------------------------------------------------------------

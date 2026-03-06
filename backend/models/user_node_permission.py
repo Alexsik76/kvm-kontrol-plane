@@ -19,13 +19,16 @@ import uuid
 from datetime import UTC, datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, UniqueConstraint, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+import sqlalchemy as sa
+from sqlmodel import Field, Relationship, SQLModel
+from typing import TYPE_CHECKING
 
-from db.base import Base
+if TYPE_CHECKING:
+    from models.kvm_node import KvmNode
+    from models.user import User
 
 
-class UserNodePermission(Base):
+class UserNodePermission(SQLModel, table=True):
     """Grant record linking a user to a KVM node with specific capabilities.
 
     Columns
@@ -46,49 +49,44 @@ class UserNodePermission(Base):
 
     __tablename__ = "user_node_permissions"
 
-    __table_args__ = (UniqueConstraint("user_id", "node_id", name="uq_user_node"),)
+    __table_args__ = (sa.UniqueConstraint("user_id", "node_id", name="uq_user_node"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(
+        foreign_key="users.id",
+        ondelete="CASCADE",
         nullable=False,
         index=True,
     )
-    node_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("kvm_nodes.id", ondelete="CASCADE"),
+    node_id: uuid.UUID = Field(
+        foreign_key="kvm_nodes.id",
+        ondelete="CASCADE",
         nullable=False,
         index=True,
     )
-    can_view: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    can_control: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    granted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        nullable=False,
+    can_view: bool = Field(default=True, nullable=False)
+    can_control: bool = Field(default=False, nullable=False)
+    granted_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False),
     )
     # SET NULL on delete so removing the granting admin doesn't delete the grant
-    granted_by_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid(as_uuid=True),
-        ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=True,
+    granted_by_id: Optional[uuid.UUID] = Field(
+        default=None,
+        foreign_key="users.id",
+        ondelete="SET NULL",
     )
 
     # ORM relationships — use string refs to avoid circular imports.
     # foreign_keys must be explicit because there are TWO FKs to the users table
     # (user_id and granted_by_id), so SQLAlchemy cannot infer which one to use.
-    user: Mapped["User"] = relationship(  # type: ignore[name-defined]
-        "User",
+    user: "User" = Relationship(  # type: ignore[name-defined]
         back_populates="node_permissions",
-        foreign_keys=[user_id],
+        sa_relationship_kwargs={"foreign_keys": "UserNodePermission.user_id"},
     )
-    node: Mapped["KvmNode"] = relationship(  # type: ignore[name-defined]
-        "KvmNode",
+    node: "KvmNode" = Relationship(  # type: ignore[name-defined]
         back_populates="user_permissions",
-        foreign_keys=[node_id],
+        sa_relationship_kwargs={"foreign_keys": "UserNodePermission.node_id"},
     )
 
     def __repr__(self) -> str:

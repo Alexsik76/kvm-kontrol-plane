@@ -8,6 +8,7 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.0          # ASGI server with uvloop + httptools
 
 # --- Database (async) ---
+sqlmodel==0.0.22
 sqlalchemy[asyncio]==2.0.48
 asyncpg==0.31.0                    # async PostgreSQL driver (wheels for py3.14)
 alembic==1.15.1                    # schema migrations

@@ -16,7 +16,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
-from sqlalchemy import select
+from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.security import (

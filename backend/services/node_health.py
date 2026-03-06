@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timezone
 
 import httpx
-from sqlalchemy import select
+from sqlmodel import select
 
 from core.config import settings
 from db.session import AsyncSessionLocal
