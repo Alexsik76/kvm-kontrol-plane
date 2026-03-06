@@ -1,0 +1,98 @@
+# ==============================================================================
+# IP-KVM Control Plane — Docker Compose (Monorepo layout)
+#
+# Monorepo structure:
+#   control_plane/
+#   ├── docker-compose.yml    ← this file (root of the repo)
+#   ├── backend/              ← FastAPI application
+#   └── frontend/             ← Vuetify SPA (to be created)
+#
+# No reverse-proxy service: traffic is routed through VPN/tunnel directly.
+# For production add an SSH tunnel or WireGuard between the browser and the
+# Docker host — Caddy is NOT part of this stack.
+# ==============================================================================
+
+services:
+
+  # ----------------------------------------------------------------------------
+  # FastAPI application (Uvicorn ASGI server)
+  # ----------------------------------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: kvm_api
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      # Exposed directly on the host (no proxy layer).
+      - "8000:8000"
+    volumes:
+      # Mount host directory for hot-reload and saving migrations to host
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - kvm_internal
+
+  # ----------------------------------------------------------------------------
+  # Vue.js + Vuetify Frontend SPA (Vite Dev Server)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kvm_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Map the host source code for instant Vite HMR
+      - ./frontend:/app
+      # Do not overwrite the container's node_modules with the host's 
+      # (prevents binary mismatches if host/container OS differ)
+      - /app/node_modules
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - kvm_internal
+
+  # ----------------------------------------------------------------------------
+  # PostgreSQL 16 database
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: kvm_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kvmuser
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: kvmdb
+    volumes:
+      - kvm_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - kvm_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kvmuser -d kvmdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ------------------------------------------------------------------------------
+# Named volumes
+# ------------------------------------------------------------------------------
+volumes:
+  kvm_pgdata:
+
+# ------------------------------------------------------------------------------
+# Networks
+# ------------------------------------------------------------------------------
+networks:
+  kvm_internal:
+    driver: bridge

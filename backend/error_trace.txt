@@ -1,0 +1,56 @@
+Traceback (most recent call last):
+  File "<string>", line 12, in <module>
+    exec(stmt)
+    ~~~~^^^^^^
+  File "<string>", line 1, in <module>
+    import sys
+  File "D:\diplom\control_plane\backend\models\__init__.py", line 8, in <module>
+    from models.kvm_node import KvmNode  # noqa: F401
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\diplom\control_plane\backend\models\kvm_node.py", line 29, in <module>
+    class KvmNode(Base):
+    ...<54 lines>...
+            return f"<KvmNode id={self.id} name={self.name!r} status={self.status}>"
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\orm\decl_api.py", line 842, in __init_subclass__
+    _as_declarative(cls._sa_registry, cls, cls.__dict__)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 244, in _as_declarative
+    return _MapperConfig.setup_mapping(registry, cls, dict_, None, {})
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 325, in setup_mapping
+    return _ClassScanMapperConfig(
+        registry, cls_, dict_, table, mapper_kw
+    )
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 572, in __init__
+    self._extract_mappable_attributes()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 1568, in _extract_mappable_attributes
+    value.declarative_scan(
+    ~~~~~~~~~~~~~~~~~~~~~~^
+        self,
+        ^^^^^
+    ...<7 lines>...
+        is_dataclass,
+        ^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\orm\properties.py", line 709, in declarative_scan
+    self._init_column_for_annotation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cls,
+        ^^^^
+    ...<2 lines>...
+        originating_module,
+        ^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\orm\properties.py", line 754, in _init_column_for_annotation
+    our_type = de_optionalize_union_types(argument)
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\util\typing.py", line 476, in de_optionalize_union_types
+    return make_union_type(*typ)
+  File "D:\diplom\control_plane\backend\.venv\Lib\site-packages\sqlalchemy\util\typing.py", line 550, in make_union_type
+    return Union.__getitem__(types)  # type: ignore
+           ~~~~~~~~~~~~~~~~~^^^^^^^
+TypeError: descriptor '__getitem__' requires a 'typing.Union' object but received a 'tuple'
+OK: Base
+FAIL: User -> TypeError: descriptor '__getitem__' requires a 'typing.Union' object but received a 'tuple'
