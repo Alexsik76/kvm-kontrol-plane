@@ -23,10 +23,13 @@ class NodeStatus(str, Enum):
 class KvmNodeBase(SQLModel):
     """Shared fields between create and read schemas."""
 
-    name: str = Field(..., min_length=1, max_length=64, examples=["raspberrypi-01"])
+    name: str = Field(
+        ...,
+        min_length=1,
+        max_length=64,
+    )
     internal_ip: str = Field(
         ...,
-        examples=["10.8.0.10"],
         description="Internal (tunnel) IP address of the Raspberry Pi.",
     )
     ws_port: int = Field(default=8080, ge=1, le=65535)

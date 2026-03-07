@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { createKeyboardEventMessage, createMouseEventMessage } from '../utils/hid'
 
 const props = defineProps<{
   nodeId: string
+  nodeIp?: string
 }>()
 
-const emit = defineEmits(['status-changed'])
+const emit = defineEmits<{
+  (e: 'status-changed', payload: { status: string, error: string }): void
+  (e: 'capture-change', captured: boolean): void
+}>()
 
 const authStore = useAuthStore()
 
@@ -118,13 +123,28 @@ const captureAndUploadScreenshot = async () => {
       type: answer.type,
       sdp: answer.sdp
     })
-
   } catch (err: any) {
     console.error('WebRTC streaming error:', err)
     updateStatus('Failed to connect', err.message || 'Failed to establish WebRTC stream.')
     loading.value = false
   }
 }
+const isCaptured = ref(false)
+
+const startCapture = () => {
+  isCaptured.value = true
+  emit('capture-change', true)
+  if (videoRef.value) {
+    videoRef.value.focus()
+  }
+}
+
+const stopCapture = () => {
+  isCaptured.value = false
+  emit('capture-change', false)
+}
+
+defineExpose({ startCapture, stopCapture })
 
 onMounted(() => {
   startStream()
@@ -145,17 +165,167 @@ watch(() => props.nodeId, () => {
   }
   startStream()
 })
+
+// === HID WebSocket Integration ===
+let wsConnection: WebSocket | null = null
+const isHidConnected = ref(false)
+
+const connectHID = () => {
+  if (!props.nodeIp) return
+  
+  if (wsConnection) {
+    wsConnection.close()
+  }
+
+  const wsUrl = `ws://${props.nodeIp}:8080/ws/control`
+  console.log('Connecting to HID Server:', wsUrl)
+  
+  wsConnection = new WebSocket(wsUrl)
+  
+  wsConnection.onopen = () => {
+    isHidConnected.value = true
+    console.log('HID WebSocket connected')
+  }
+  
+  wsConnection.onclose = () => {
+    isHidConnected.value = false
+    console.log('HID WebSocket closed')
+    // Auto-reconnect after 3s
+    setTimeout(() => {
+      if (props.nodeIp) connectHID()
+    }, 3000)
+  }
+  
+  wsConnection.onerror = (err) => {
+    console.error('HID WebSocket error:', err)
+  }
+}
+
+watch(() => props.nodeIp, (newIp) => {
+  if (newIp) {
+    connectHID()
+  }
+}, { immediate: true })
+
+onBeforeUnmount(() => {
+  if (wsConnection) {
+    wsConnection.onclose = null // Prevent auto-reconnect
+    wsConnection.close()
+    wsConnection = null
+  }
+})
+
+// === Event Handlers for HID ===
+const sendHIDMessage = (msg: any) => {
+  if (wsConnection && wsConnection.readyState === WebSocket.OPEN && msg) {
+    wsConnection.send(JSON.stringify(msg))
+  }
+}
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (!isCaptured.value) return;
+  // Allow browser shortcuts
+  if (['F5', 'F12'].includes(e.code)) return;
+  
+  // Custom exit shortcut: Shift + Escape
+  if (e.code === 'Escape' && e.shiftKey) {
+    stopCapture()
+    return;
+  }
+
+  e.preventDefault()
+  const msg = createKeyboardEventMessage(e, true)
+  if (msg) sendHIDMessage(msg)
+}
+
+const handleKeyUp = (e: KeyboardEvent) => {
+  if (!isCaptured.value) return;
+  if (['F5', 'F12'].includes(e.code)) return;
+  if (e.code === 'Escape' && e.shiftKey) return; 
+
+  e.preventDefault()
+  const msg = createKeyboardEventMessage(e, false)
+  if (msg) sendHIDMessage(msg)
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isCaptured.value) return;
+  e.preventDefault()
+  if (e.movementX === 0 && e.movementY === 0) return;
+  const msg = createMouseEventMessage(e.buttons, e.movementX, e.movementY, 0)
+  sendHIDMessage(msg)
+}
+
+const handleMouseDown = (e: MouseEvent) => {
+  if (!isCaptured.value) return;
+  e.preventDefault()
+  const msg = createMouseEventMessage(e.buttons, 0, 0, 0)
+  sendHIDMessage(msg)
+}
+
+const handleMouseUp = (e: MouseEvent) => {
+  if (!isCaptured.value) return;
+  e.preventDefault()
+  const msg = createMouseEventMessage(e.buttons, 0, 0, 0)
+  sendHIDMessage(msg)
+}
+
+const handleWheel = (e: WheelEvent) => {
+  if (!isCaptured.value) return;
+  e.preventDefault()
+  const wheelVal = e.deltaY > 0 ? -1 : 1
+  const msg = createMouseEventMessage(e.buttons, 0, 0, wheelVal)
+  sendHIDMessage(msg)
+}
+
+// Disable context menu on the video element to prevent Right-click blocking
+const handleContextMenu = (e: Event) => {
+  e.preventDefault()
+}
 </script>
 
 <template>
   <v-card class="flex-grow-1 bg-black rounded-lg overflow-hidden position-relative h-100" elevation="6">
+    <!-- HID Connected Indicator Overlay -->
+    <div 
+      v-if="isHidConnected" 
+      class="position-absolute text-caption px-3 py-1 rounded bg-black border"
+      :class="isCaptured ? 'border-success text-success' : 'border-grey text-grey'"
+      style="top: 8px; right: 8px; z-index: 20; opacity: 0.9;"
+    >
+      <v-icon icon="mdi-keyboard" size="small" class="mr-1"></v-icon>
+      <v-icon icon="mdi-mouse" size="small" class="mr-2"></v-icon>
+      <span v-if="isCaptured" class="font-weight-bold">HID Active (Shift+ESC to exit)</span>
+      <span v-else>HID Ready</span>
+    </div>
+
+    <!-- Click to Capture Overlay -->
+    <div
+      v-if="isHidConnected && !isCaptured"
+      class="position-absolute d-flex flex-column align-center justify-center w-100 h-100"
+      style="top: 0; left: 0; z-index: 10; background: rgba(0,0,0,0.5); cursor: pointer; backdrop-filter: grayscale(80%);"
+      @click="startCapture"
+    >
+      <v-icon icon="mdi-cursor-default-click" size="64" color="white" class="mb-4"></v-icon>
+      <div class="text-h5 text-white font-weight-bold">Click to Control</div>
+      <div class="text-body-1 text-grey-lighten-2 mt-2">Press Shift+ESC to unlock</div>
+    </div>
+
     <video
       ref="videoRef"
       autoplay
       playsinline
       muted
+      tabindex="0"
+      @keydown="handleKeyDown"
+      @keyup="handleKeyUp"
+      @mousemove="handleMouseMove"
+      @mousedown="handleMouseDown"
+      @mouseup="handleMouseUp"
+      @wheel="handleWheel"
+      @contextmenu="handleContextMenu"
       class="w-100 h-100"
-      style="object-fit: contain; background: #000;"
+      :style="{ objectFit: 'contain', background: '#000', outline: 'none', cursor: isCaptured ? 'none' : 'crosshair' }"
     ></video>
 
     <div

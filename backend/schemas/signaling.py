@@ -21,14 +21,14 @@ class SDPOffer(BaseModel):
     """
 
     sdp: str = Field(..., description="Session Description Protocol offer string.")
-    type: str = Field(default="offer", examples=["offer"])
+    type: str = Field(default="offer")
 
 
 class SDPAnswer(BaseModel):
     """SDP answer returned by MediaMTX, proxied back to the browser."""
 
     sdp: str = Field(..., description="Session Description Protocol answer string.")
-    type: str = Field(default="answer", examples=["answer"])
+    type: str = Field(default="answer")
 
 
 class ICECandidate(BaseModel):

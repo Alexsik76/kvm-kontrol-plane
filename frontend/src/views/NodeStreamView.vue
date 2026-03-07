@@ -11,6 +11,9 @@ const authStore = useAuthStore()
 const nodeId = route.params.id as string
 const node = ref<any>(null)
 
+const playerRef = ref<InstanceType<typeof WebRTCPlayer> | null>(null)
+const isHidCaptured = ref(false)
+
 // Values passed up from WebRTCPlayer component
 const streamStatus = ref('Connecting...')
 const connectionError = ref('')
@@ -81,7 +84,13 @@ onMounted(() => {
           
           <!-- Extracted WebRTC Player -->
           <v-col cols="12" md="8" lg="9" class="d-flex flex-column h-100">
-            <WebRTCPlayer :node-id="nodeId" @status-changed="handleStreamStatus" />
+            <WebRTCPlayer 
+              ref="playerRef"
+              :node-id="nodeId" 
+              :node-ip="node?.internal_ip"
+              @status-changed="handleStreamStatus" 
+              @capture-change="isHidCaptured = $event"
+            />
           </v-col>
 
           <!-- Interactivity Section (WebSocket placeholder) -->
@@ -93,12 +102,21 @@ onMounted(() => {
               </v-card-title>
               
               <v-card-text class="pa-4">
-                <v-alert type="info" variant="tonal" class="mb-4">
-                  WebSocket control proxy is not yet implemented.
+                <v-alert :type="isHidCaptured ? 'success' : 'info'" variant="tonal" class="mb-4">
+                  {{ isHidCaptured ? 'HID Capture Active' : 'HID Control Ready' }}
                 </v-alert>
+
+                <v-btn 
+                  v-if="isHidCaptured"
+                  color="error" 
+                  class="w-100 mb-4 font-weight-bold" 
+                  @click="playerRef?.stopCapture()"
+                >
+                  <v-icon icon="mdi-close-circle" class="mr-2"></v-icon> Exit Capture
+                </v-btn>
                 
                 <p class="text-body-2 text-medium-emphasis">
-                  Keyboard and mouse events will be captured from the video player and proxied to the KVM node.
+                  Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>Shift+ESC</b> or the button above to release focus.
                 </p>
               </v-card-text>
             </v-card>
