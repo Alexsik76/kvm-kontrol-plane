@@ -54,8 +54,13 @@ async def signal_offer(
     ``RTCPeerConnection.createOffer()`` to initiate video streaming.
     """
     # Build the WHEP URL via the centralised URL helper
-    mediamtx_url = get_node_http_url(node)
-    logger.info("Relaying SDP offer to node '%s' at %s", node.name, mediamtx_url)
+    try:
+        mediamtx_url = get_node_http_url(node)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal error building node URL",
+        )
 
     async with httpx.AsyncClient(timeout=settings.NODE_HTTP_TIMEOUT_SECONDS) as client:
         try:
@@ -65,22 +70,22 @@ async def signal_offer(
                 headers={"Content-Type": "application/sdp"},
             )
             response.raise_for_status()
-        except httpx.RequestError as exc:
-            logger.error("SDP relay: request to %s failed — %s", mediamtx_url, exc)
+            return SDPAnswer(sdp=response.text, type="answer")
+        except httpx.RequestError:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Could not reach the KVM node's streaming server.",
             )
         except httpx.HTTPStatusError as exc:
-            logger.error(
-                "SDP relay: MediaMTX returned HTTP %d", exc.response.status_code
-            )
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=f"MediaMTX error: HTTP {exc.response.status_code}",
             )
-
-    return SDPAnswer(sdp=response.text, type="answer")
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unexpected signaling error",
+            )
 
 
 @router.post(

@@ -38,9 +38,20 @@ export function useWebRTC(nodeId: Ref<string>) {
         },
         body: JSON.stringify({ screenshot: dataUrl })
       })
-      console.log('Automated screenshot captured and saved.')
     } catch (err) {
       console.error('Failed to capture or upload screenshot:', err)
+    }
+  }
+
+  const maxRetries = 5
+  const retryDelay = 5000
+  let retryCount = 0
+  let reconnectTimer: number | null = null
+
+  const clearReconnectTimer = () => {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
     }
   }
 
@@ -49,6 +60,7 @@ export function useWebRTC(nodeId: Ref<string>) {
 
     loading.value = true
     updateStatus('Negotiating WebRTC...')
+    clearReconnectTimer()
 
     if (peerConnection.value) {
       peerConnection.value.close()
@@ -67,8 +79,8 @@ export function useWebRTC(nodeId: Ref<string>) {
             videoRef.value.srcObject = event.streams[0]
             updateStatus('Connected')
             loading.value = false
+            retryCount = 0 // Reset on successful connection
             
-            // Listen for data loaded to take a screenshot instead of setTimeout
             videoRef.value.onloadeddata = () => {
               captureAndUploadScreenshot()
               if (videoRef.value) videoRef.value.onloadeddata = null
@@ -79,9 +91,11 @@ export function useWebRTC(nodeId: Ref<string>) {
 
       peerConnection.value.onconnectionstatechange = () => {
         const state = peerConnection.value?.connectionState
+        
         if (state === 'failed' || state === 'disconnected') {
           updateStatus('Connection Lost', 'The video stream was disconnected.')
           loading.value = false
+          scheduleReconnect()
         }
       }
 
@@ -101,8 +115,14 @@ export function useWebRTC(nodeId: Ref<string>) {
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.detail || 'Signaling failed')
+        let errorMsg = 'Signaling failed'
+        try {
+          const data = await response.json()
+          errorMsg = data.detail || errorMsg
+        } catch (e) {
+          errorMsg = `Server error (${response.status})`
+        }
+        throw new Error(errorMsg)
       }
 
       const answer = await response.json()
@@ -114,13 +134,27 @@ export function useWebRTC(nodeId: Ref<string>) {
       console.error('WebRTC streaming error:', err)
       updateStatus('Failed to connect', err.message || 'Failed to establish WebRTC stream.')
       loading.value = false
+      scheduleReconnect()
     }
   }
 
+  const scheduleReconnect = () => {
+    clearReconnectTimer()
+    retryCount++
+    
+    reconnectTimer = window.setTimeout(() => {
+      if (nodeId.value) {
+        startStream()
+      }
+    }, retryDelay)
+  }
+
   watch(nodeId, (newId) => {
+    retryCount = 0 // Reset on node change
     if (newId) {
       startStream()
     } else {
+      clearReconnectTimer()
       if (peerConnection.value) {
         peerConnection.value.close()
         peerConnection.value = null
@@ -130,6 +164,7 @@ export function useWebRTC(nodeId: Ref<string>) {
   }, { immediate: true })
 
   onBeforeUnmount(() => {
+    clearReconnectTimer()
     if (peerConnection.value) {
       peerConnection.value.close()
       peerConnection.value = null
