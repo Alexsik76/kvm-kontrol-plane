@@ -7,7 +7,7 @@ import {
 export function usePlayerInput(
   videoRef: Ref<HTMLVideoElement | null>,
   isCaptured: Ref<boolean>,
-  sendHIDMessage: (msg: string) => void,
+  sendHIDMessage: (msg: any) => void,
   emit: (e: "capture-change", captured: boolean) => void,
 ) {
   let accX = 0;
