@@ -134,6 +134,7 @@ const isCaptured = ref(false)
 const startCapture = () => {
   if (videoRef.value) {
     videoRef.value.requestPointerLock()
+    videoRef.value.focus()
   }
 }
 
@@ -146,6 +147,15 @@ const handlePointerLockChange = () => {
   const captured = document.pointerLockElement === videoRef.value
   isCaptured.value = captured
   emit('capture-change', captured)
+  
+  if (captured) {
+    videoRef.value?.focus()
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+  } else {
+    window.removeEventListener('keydown', handleKeyDown)
+    window.removeEventListener('keyup', handleKeyUp)
+  }
 }
 
 onMounted(() => {
@@ -159,6 +169,8 @@ onBeforeUnmount(() => {
     peerConnection = null
   }
   document.removeEventListener('pointerlockchange', handlePointerLockChange)
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
   if (wsConnection) {
     wsConnection.onclose = null // Prevent auto-reconnect
     wsConnection.close()
@@ -236,6 +248,7 @@ const sendHIDMessage = (msg: any) => {
 
 const handleKeyDown = (e: KeyboardEvent) => {
   if (!isCaptured.value) return;
+  console.log('Key Down:', e.code)
   // Allow browser shortcuts
   if (['F5', 'F12'].includes(e.code)) return;
   
@@ -329,8 +342,6 @@ const handleContextMenu = (e: Event) => {
       playsinline
       muted
       tabindex="0"
-      @keydown="handleKeyDown"
-      @keyup="handleKeyUp"
       @mousemove="handleMouseMove"
       @mousedown="handleMouseDown"
       @mouseup="handleMouseUp"
