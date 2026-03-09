@@ -43,10 +43,8 @@ export function useWebRTC(nodeId: Ref<string>) {
     }
   }
 
-  const maxRetries = 5
   const retryDelay = 5000
-  let retryCount = 0
-  let reconnectTimer: number | null = null
+  let reconnectTimer: any = null
 
   const clearReconnectTimer = () => {
     if (reconnectTimer) {
@@ -79,7 +77,6 @@ export function useWebRTC(nodeId: Ref<string>) {
             videoRef.value.srcObject = event.streams[0]
             updateStatus('Connected')
             loading.value = false
-            retryCount = 0 // Reset on successful connection
             
             videoRef.value.onloadeddata = () => {
               captureAndUploadScreenshot()
@@ -140,7 +137,6 @@ export function useWebRTC(nodeId: Ref<string>) {
 
   const scheduleReconnect = () => {
     clearReconnectTimer()
-    retryCount++
     
     reconnectTimer = window.setTimeout(() => {
       if (nodeId.value) {
@@ -150,7 +146,6 @@ export function useWebRTC(nodeId: Ref<string>) {
   }
 
   watch(nodeId, (newId) => {
-    retryCount = 0 // Reset on node change
     if (newId) {
       startStream()
     } else {
