@@ -132,22 +132,25 @@ const captureAndUploadScreenshot = async () => {
 const isCaptured = ref(false)
 
 const startCapture = () => {
-  isCaptured.value = true
-  emit('capture-change', true)
   if (videoRef.value) {
-    videoRef.value.focus()
+    videoRef.value.requestPointerLock()
   }
 }
 
 const stopCapture = () => {
-  isCaptured.value = false
-  emit('capture-change', false)
+  document.exitPointerLock()
 }
 
-defineExpose({ startCapture, stopCapture })
+// Global listener for Pointer Lock state
+const handlePointerLockChange = () => {
+  const captured = document.pointerLockElement === videoRef.value
+  isCaptured.value = captured
+  emit('capture-change', captured)
+}
 
 onMounted(() => {
   startStream()
+  document.addEventListener('pointerlockchange', handlePointerLockChange)
 })
 
 onBeforeUnmount(() => {
@@ -155,7 +158,15 @@ onBeforeUnmount(() => {
     peerConnection.close()
     peerConnection = null
   }
+  document.removeEventListener('pointerlockchange', handlePointerLockChange)
+  if (wsConnection) {
+    wsConnection.onclose = null // Prevent auto-reconnect
+    wsConnection.close()
+    wsConnection = null
+  }
 })
+
+defineExpose({ startCapture, stopCapture })
 
 // Restart stream if nodeId changes dynamically
 watch(() => props.nodeId, () => {
@@ -171,7 +182,7 @@ let wsConnection: WebSocket | null = null
 const isHidConnected = ref(false)
 
 const connectHID = () => {
-  if (!props.nodeIp) return
+  if (!props.nodeId) return
   
   if (wsConnection) {
     wsConnection.close()
@@ -193,7 +204,7 @@ const connectHID = () => {
     console.log('HID WebSocket closed')
     // Auto-reconnect after 3s
     setTimeout(() => {
-      if (props.nodeIp) connectHID()
+      if (props.nodeId) connectHID()
     }, 3000)
   }
   
@@ -202,8 +213,8 @@ const connectHID = () => {
   }
 }
 
-watch(() => props.nodeIp, (newIp) => {
-  if (newIp) {
+watch(() => props.nodeId, (id) => {
+  if (id) {
     connectHID()
   }
 }, { immediate: true })
