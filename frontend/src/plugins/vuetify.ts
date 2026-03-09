@@ -1,4 +1,5 @@
 import { createVuetify } from 'vuetify'
+// @ts-expect-error - Vuetify styles don't have types but work fine
 import 'vuetify/styles'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import '@mdi/font/css/materialdesignicons.css'
