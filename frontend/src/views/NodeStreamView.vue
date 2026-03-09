@@ -106,17 +106,8 @@ onMounted(() => {
                   {{ isHidCaptured ? 'HID Capture Active' : 'HID Control Ready' }}
                 </v-alert>
 
-                <v-btn 
-                  v-if="isHidCaptured"
-                  color="error" 
-                  class="w-100 mb-4 font-weight-bold" 
-                  @click="playerRef?.stopCapture()"
-                >
-                  <v-icon icon="mdi-close-circle" class="mr-2"></v-icon> Exit Capture
-                </v-btn>
-                
                 <p class="text-body-2 text-medium-emphasis">
-                  Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>Shift+ESC</b> or the button above to release focus.
+                  Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>Shift+ESC</b> to release focus and unlock the mouse.
                 </p>
               </v-card-text>
             </v-card>
