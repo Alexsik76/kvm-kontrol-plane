@@ -47,7 +47,7 @@ export const resetKeyboardState = () => {
   currentModifiers = 0;
   return {
     type: "keyboard",
-    data: { modifiers: 0, keys: "" }
+    data: { modifiers: 0, keys: "" } // "" is an empty byte array in base64
   };
 };
 

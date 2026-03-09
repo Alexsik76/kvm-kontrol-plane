@@ -25,6 +25,9 @@ export function usePlayerInput(
     // Custom exit shortcut: Shift + Escape
     if (e.code === "Escape" && e.shiftKey) {
       e.preventDefault();
+      // Important: if we just call stopCapture(), the browser stops propagating events,
+      // but the server might still have "Shift" pressed. stopCapture() clears the keyboard state 
+      // by calling resetKeyboardState(), which is good.
       stopCapture();
       return;
     }
