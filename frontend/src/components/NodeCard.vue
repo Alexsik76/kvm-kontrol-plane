@@ -73,6 +73,10 @@ const getStatusColor = (status: string) => {
         <v-icon icon="mdi-ip-network" size="small" class="mr-3 text-medium-emphasis"></v-icon>
         <span class="text-body-1">{{ node.internal_ip }}</span>
       </div>
+      <div v-if="node.tunnel_url" class="d-flex align-center mb-2">
+        <v-icon icon="mdi-cloud-lock" size="small" class="mr-3 text-primary"></v-icon>
+        <span class="text-body-1 text-primary">{{ node.tunnel_url }}</span>
+      </div>
       <div class="d-flex align-center mb-3">
         <v-icon icon="mdi-clock-outline" size="small" class="mr-3 text-medium-emphasis"></v-icon>
         <span class="text-body-2 text-medium-emphasis">

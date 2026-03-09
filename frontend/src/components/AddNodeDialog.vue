@@ -11,6 +11,7 @@ const error = ref('')
 const newNode = ref({
   name: '',
   internal_ip: '',
+  tunnel_url: '',
   ws_port: 8080,
   mediamtx_api_port: 9997,
   stream_name: 'kvm'
@@ -49,6 +50,7 @@ const submitNode = async () => {
     const payload = {
       name: newNode.value.name,
       internal_ip: newNode.value.internal_ip,
+      tunnel_url: newNode.value.tunnel_url,
       ws_port: newNode.value.ws_port,
       mediamtx_api_port: newNode.value.mediamtx_api_port,
       stream_name: newNode.value.stream_name,
@@ -70,7 +72,7 @@ const submitNode = async () => {
     }
     
     dialogOpen.value = false
-    newNode.value = { name: '', internal_ip: '', ws_port: 8080, mediamtx_api_port: 9997, stream_name: 'kvm' }
+    newNode.value = { name: '', internal_ip: '', tunnel_url: '', ws_port: 8080, mediamtx_api_port: 9997, stream_name: 'kvm' }
     machineInfoList.value = []
     emit('node-added') // Tell parent to refresh
   } catch (err: any) {
@@ -103,6 +105,7 @@ const submitNode = async () => {
         <v-form :disabled="loading">
           <v-text-field v-model="newNode.name" label="Node Name" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. Server-Room-Rack-1"></v-text-field>
           <v-text-field v-model="newNode.internal_ip" label="Internal IP" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. 10.8.0.10"></v-text-field>
+          <v-text-field v-model="newNode.tunnel_url" label="Tunnel URL (Cloudflare)" variant="outlined" density="comfortable" class="mb-2" hint="e.g. https://pi4.lab.vn.ua"></v-text-field>
           <v-text-field v-model="newNode.stream_name" label="Stream Name (MediaMTX Path)" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. kvm"></v-text-field>
           
           <v-row mb-0>
