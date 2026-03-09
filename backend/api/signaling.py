@@ -29,6 +29,7 @@ from core.config import settings
 from core.dependencies import require_node_access
 from models.kvm_node import KvmNode
 from schemas.signaling import ICECandidate, SDPAnswer, SDPOffer
+from services.node_url import get_node_http_url
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,8 @@ async def signal_offer(
     The browser should call this endpoint with the output of
     ``RTCPeerConnection.createOffer()`` to initiate video streaming.
     """
-    # MediaMTX WebRTC port is 8889 by default.
-    # MediaMTX's built-in WHEP endpoint is served at /<stream_name>/whep
-    mediamtx_url = f"http://{node.internal_ip}:8889/{node.stream_name}/whep"
+    # Build the WHEP URL via the centralised URL helper
+    mediamtx_url = get_node_http_url(node)
     logger.info("Relaying SDP offer to node '%s' at %s", node.name, mediamtx_url)
 
     async with httpx.AsyncClient(timeout=settings.NODE_HTTP_TIMEOUT_SECONDS) as client:
