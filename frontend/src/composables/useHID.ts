@@ -6,9 +6,6 @@ export function useHID(nodeId: Ref<string>) {
   const wsConnection = shallowRef<WebSocket | null>(null)
   const isHidConnected = ref(false)
 
-  let reconnectAttempts = 0
-  const maxReconnectAttempts = 10
-  const baseDelay = 3000
   let lastMessageTime = 0
 
   const connectHID = () => {
@@ -29,21 +26,12 @@ export function useHID(nodeId: Ref<string>) {
     
     wsConnection.value.onopen = () => {
       isHidConnected.value = true
-      reconnectAttempts = 0
       console.log('HID WebSocket connected')
     }
     
     wsConnection.value.onclose = () => {
       isHidConnected.value = false
-      
-      if (reconnectAttempts < maxReconnectAttempts) {
-        reconnectAttempts++
-        const delay = Math.min(baseDelay * reconnectAttempts, 30000)
-        console.log(`HID WebSocket closed. Retrying in ${delay}ms...`)
-        setTimeout(() => {
-          if (nodeId.value) connectHID()
-        }, delay)
-      }
+      console.log('HID WebSocket closed. No automatic reconnection.')
     }
   }
 
