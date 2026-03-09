@@ -175,9 +175,12 @@ export function usePlayerInput(
   };
 
   const handlePointerLockChange = () => {
-    // Intentionally do not drop capture here so Esc can still be sent to the VM.
-    // The user's cursor will appear, but they are still capturing keyboard events.
-    // If they click the video again, it will regain pointer lock.
+    // If the browser natively exited pointer lock (usually via Esc),
+    // and we are still "captured", we should drop capture immediately.
+    // Otherwise the user has to press Esc again to actually fire our stopCapture.
+    if (!document.pointerLockElement && isCaptured.value) {
+      stopCapture();
+    }
   };
 
   const handleWindowBlur = () => {
