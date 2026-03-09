@@ -6,26 +6,25 @@ export function useHID(nodeId: Ref<string>) {
   const wsConnection = shallowRef<WebSocket | null>(null)
   const isHidConnected = ref(false)
 
-  const sendHIDMessage = (msg: any) => {
-    if (wsConnection.value && wsConnection.value.readyState === WebSocket.OPEN && msg) {
-      wsConnection.value.send(JSON.stringify(msg))
-    }
-  }
-
   let reconnectAttempts = 0
   const maxReconnectAttempts = 10
   const baseDelay = 3000
+  let lastMessageTime = 0
+  const MSG_THROTTLE_MS = 10 // 100Hz max for any HID message
 
   const connectHID = () => {
     if (!nodeId.value) return
     
+    // Always clear existing connection properly
     if (wsConnection.value) {
       wsConnection.value.onclose = null
       wsConnection.value.close()
     }
 
+    // Ensure we are using the LATEST token from the store
+    const currentToken = authStore.accessToken
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/api/v1/nodes/${nodeId.value}/ws?token=${authStore.accessToken}`
+    const wsUrl = `${protocol}//${window.location.host}/api/v1/nodes/${nodeId.value}/ws?token=${currentToken}`
     
     wsConnection.value = new WebSocket(wsUrl)
     
@@ -41,17 +40,21 @@ export function useHID(nodeId: Ref<string>) {
       if (reconnectAttempts < maxReconnectAttempts) {
         reconnectAttempts++
         const delay = Math.min(baseDelay * reconnectAttempts, 30000)
-        console.log(`HID WebSocket closed. Retrying in ${delay}ms (attempt ${reconnectAttempts}/${maxReconnectAttempts})`)
+        console.log(`HID WebSocket closed. Retrying in ${delay}ms...`)
         setTimeout(() => {
           if (nodeId.value) connectHID()
         }, delay)
-      } else {
-        console.error('Max HID reconnection attempts reached.')
       }
     }
+  }
+
+  const throttledSend = (msg: any) => {
+    const now = Date.now()
+    if (now - lastMessageTime < MSG_THROTTLE_MS) return
     
-    wsConnection.value.onerror = () => {
-      // Error handling is mostly covered by onclose
+    if (wsConnection.value?.readyState === WebSocket.OPEN) {
+      wsConnection.value.send(JSON.stringify(msg))
+      lastMessageTime = now
     }
   }
 
@@ -77,7 +80,7 @@ export function useHID(nodeId: Ref<string>) {
 
   return {
     isHidConnected,
-    sendHIDMessage,
+    sendHIDMessage: throttledSend,
     connectHID
   }
 }
