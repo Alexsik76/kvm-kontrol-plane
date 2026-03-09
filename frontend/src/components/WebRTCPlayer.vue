@@ -27,7 +27,8 @@ const {
 
 const {
   isHidConnected,
-  sendHIDMessage
+  sendHIDMessage,
+  connectHID
 } = useHID(nodeId)
 
 const isCaptured = ref(false)
@@ -40,7 +41,7 @@ const {
   handleMouseUp,
   handleWheel,
   handleContextMenu
-} = usePlayerInput(videoRef, isCaptured, sendHIDMessage, emit)
+} = usePlayerInput(videoRef, isCaptured, sendHIDMessage, emit, connectHID)
 
 // === Watchers ===
 watch([streamStatus, connectionError], ([status, error]) => {

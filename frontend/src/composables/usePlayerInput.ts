@@ -10,6 +10,7 @@ export function usePlayerInput(
   isCaptured: Ref<boolean>,
   sendHIDMessage: (msg: any) => void,
   emit: (e: "capture-change", captured: boolean) => void,
+  connectHID?: () => void
 ) {
   let accX = 0;
   let accY = 0;
@@ -120,6 +121,11 @@ export function usePlayerInput(
   };
 
   const startCapture = () => {
+    // If there's a connection logic injected, reconnect/connect HID when stream is clicked
+    if (connectHID) {
+      connectHID()
+    }
+
     isCaptured.value = true;
     emit("capture-change", true);
     videoRef.value?.focus();
