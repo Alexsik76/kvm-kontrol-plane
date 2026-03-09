@@ -48,14 +48,17 @@ export function useHID(nodeId: Ref<string>) {
     }
   }
 
-  const throttledSend = (msg: any) => {
-    const now = Date.now()
-    if (now - lastMessageTime < MSG_THROTTLE_MS) return
-    
-    if (wsConnection.value?.readyState === WebSocket.OPEN) {
-      wsConnection.value.send(JSON.stringify(msg))
+  const sendHIDMessage = (msg: any) => {
+    if (wsConnection.value?.readyState !== WebSocket.OPEN) return;
+
+    // Only throttle pure mouse movement. Keyboard and mouse clicks MUST NOT be dropped.
+    if (msg.type === "mouse" && msg.data.buttons === 0) {
+      const now = Date.now()
+      if (now - lastMessageTime < MSG_THROTTLE_MS) return
       lastMessageTime = now
     }
+
+    wsConnection.value.send(JSON.stringify(msg))
   }
 
   watch(nodeId, (id) => {
@@ -80,7 +83,7 @@ export function useHID(nodeId: Ref<string>) {
 
   return {
     isHidConnected,
-    sendHIDMessage: throttledSend,
+    sendHIDMessage,
     connectHID
   }
 }

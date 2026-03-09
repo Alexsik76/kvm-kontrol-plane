@@ -86,6 +86,13 @@ export function usePlayerInput(
   const handleMouseDown = (e: MouseEvent) => {
     if (!isCaptured.value) return;
     e.preventDefault();
+
+    if (document.pointerLockElement !== videoRef.value) {
+      try {
+        videoRef.value?.requestPointerLock();
+      } catch (err) {}
+    }
+
     lastButtons = e.buttons;
     const msg = createMouseEventMessage(lastButtons, 0, 0, 0);
     sendHIDMessage(msg);
@@ -138,6 +145,16 @@ export function usePlayerInput(
     isCaptured.value = false;
     emit("capture-change", false);
 
+    // Release all keys and buttons to prevent them from getting stuck
+    sendHIDMessage({
+      type: "keyboard",
+      data: { modifiers: 0, keys: "" }
+    });
+    sendHIDMessage({
+      type: "mouse",
+      data: { buttons: 0, x: 0, y: 0, wheel: 0 }
+    });
+
     if (document.pointerLockElement === videoRef.value) {
       document.exitPointerLock();
     }
@@ -151,18 +168,23 @@ export function usePlayerInput(
   };
 
   const handlePointerLockChange = () => {
-    if (document.pointerLockElement !== videoRef.value && isCaptured.value) {
-      // If pointer lock is lost (e.g. by pressing ESC), stop capture
-      stopCapture();
-    }
+    // Intentionally do not drop capture here so Esc can still be sent to the VM.
+    // The user's cursor will appear, but they are still capturing keyboard events.
+    // If they click the video again, it will regain pointer lock.
+  };
+
+  const handleWindowBlur = () => {
+    stopCapture();
   };
 
   onMounted(() => {
     document.addEventListener("pointerlockchange", handlePointerLockChange);
+    window.addEventListener("blur", handleWindowBlur);
   });
 
   onBeforeUnmount(() => {
     document.removeEventListener("pointerlockchange", handlePointerLockChange);
+    window.removeEventListener("blur", handleWindowBlur);
     stopCapture();
   });
 
