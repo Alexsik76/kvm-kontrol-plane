@@ -10,7 +10,6 @@ export function useHID(nodeId: Ref<string>) {
   const maxReconnectAttempts = 10
   const baseDelay = 3000
   let lastMessageTime = 0
-  const MSG_THROTTLE_MS = 10 // 100Hz max for any HID message
 
   const connectHID = () => {
     if (!nodeId.value) return
@@ -48,17 +47,43 @@ export function useHID(nodeId: Ref<string>) {
     }
   }
 
+  const MSG_INTERVAL_MS = 15;
+  const messageQueue: any[] = [];
+  let isSendingQueue = false;
+
+  const processQueue = () => {
+    if (messageQueue.length === 0) {
+      isSendingQueue = false;
+      return;
+    }
+    
+    isSendingQueue = true;
+    const msg = messageQueue.shift();
+    
+    if (wsConnection.value?.readyState === WebSocket.OPEN) {
+      wsConnection.value.send(JSON.stringify(msg));
+    }
+    
+    setTimeout(processQueue, MSG_INTERVAL_MS);
+  };
+
   const sendHIDMessage = (msg: any) => {
     if (wsConnection.value?.readyState !== WebSocket.OPEN) return;
 
-    // Only throttle pure mouse movement. Keyboard and mouse clicks MUST NOT be dropped.
     if (msg.type === "mouse" && msg.data.buttons === 0) {
-      const now = Date.now()
-      if (now - lastMessageTime < MSG_THROTTLE_MS) return
-      lastMessageTime = now
+      // For pure mouse movement without clicks, we can drop them if sending too fast or busy
+      const now = Date.now();
+      if (now - lastMessageTime < MSG_INTERVAL_MS || isSendingQueue) return;
+      lastMessageTime = now;
+      wsConnection.value.send(JSON.stringify(msg));
+      return;
     }
 
-    wsConnection.value.send(JSON.stringify(msg))
+    // Always queue keyboard events and mouse clicks to guarantee delivery
+    messageQueue.push(msg);
+    if (!isSendingQueue) {
+      processQueue();
+    }
   }
 
   watch(nodeId, (id) => {

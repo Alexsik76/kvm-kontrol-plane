@@ -39,15 +39,50 @@ const MODIFIER_CODES = new Set([
   'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'
 ]);
 
+const pressedKeys = new Set<number>();
+let currentModifiers = 0;
+
+export const resetKeyboardState = () => {
+  pressedKeys.clear();
+  currentModifiers = 0;
+  return {
+    type: "keyboard",
+    data: { modifiers: 0, keys: "" }
+  };
+};
+
 export const createKeyboardEventMessage = (e: KeyboardEvent, isDown: boolean) => {
   const code = KEY_CODE_TO_HID[e.code];
   const modifiers = getModifiersByte(e);
   
-  // Modifiers alone don't have a 'code' in our list (we map the modifier state instead to byte 0),
-  // but we still need to send the report when a modifier is pressed/released so the server knows the state changed.
-  if (code === undefined && !MODIFIER_CODES.has(e.code)) return null;
+  let changed = false;
 
-  const keysArray = isDown && code !== undefined ? [code] : [];
+  if (modifiers !== currentModifiers) {
+    currentModifiers = modifiers;
+    changed = true;
+  }
+
+  if (code !== undefined && !MODIFIER_CODES.has(e.code)) {
+    if (isDown) {
+        if (!pressedKeys.has(code)) {
+            // Standard boot protocol limits to 6 simultaneous keys
+            if (pressedKeys.size < 6) {
+                pressedKeys.add(code);
+                changed = true;
+            }
+        }
+    } else {
+        if (pressedKeys.has(code)) {
+            pressedKeys.delete(code);
+            changed = true;
+        }
+    }
+  }
+
+  // If nothing changed, we don't need to send a new report
+  if (!changed) return null;
+
+  const keysArray = Array.from(pressedKeys);
   
   // Uint8Array to base64
   const bytes = new Uint8Array(keysArray);
@@ -60,7 +95,7 @@ export const createKeyboardEventMessage = (e: KeyboardEvent, isDown: boolean) =>
   return {
     type: "keyboard",
     data: {
-      modifiers: modifiers,
+      modifiers: currentModifiers,
       keys: base64Keys 
     }
   };

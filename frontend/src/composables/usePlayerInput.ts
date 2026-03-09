@@ -2,6 +2,7 @@ import { Ref, onMounted, onBeforeUnmount } from "vue";
 import {
   createKeyboardEventMessage,
   createMouseEventMessage,
+  resetKeyboardState
 } from "../utils/hid";
 
 export function usePlayerInput(
@@ -146,10 +147,7 @@ export function usePlayerInput(
     emit("capture-change", false);
 
     // Release all keys and buttons to prevent them from getting stuck
-    sendHIDMessage({
-      type: "keyboard",
-      data: { modifiers: 0, keys: "" }
-    });
+    sendHIDMessage(resetKeyboardState());
     sendHIDMessage({
       type: "mouse",
       data: { buttons: 0, x: 0, y: 0, wheel: 0 }
