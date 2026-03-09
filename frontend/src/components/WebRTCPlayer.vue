@@ -178,7 +178,7 @@ const connectHID = () => {
   }
 
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const wsUrl = `${protocol}//${window.location.host}/api/v1/nodes/${props.nodeId}/ws`
+  const wsUrl = `${protocol}//${window.location.host}/api/v1/nodes/${props.nodeId}/ws?token=${authStore.accessToken}`
   console.log('Connecting to HID Server via backend proxy:', wsUrl)
   
   wsConnection = new WebSocket(wsUrl)
