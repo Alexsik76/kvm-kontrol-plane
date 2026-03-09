@@ -58,7 +58,8 @@ services:
     environment:
       - VITE_API_BASE_URL=${KVM_API_TUNNEL_URL}
     ports:
-      - "3000:3000"
+      # Nginx listens on 80 internally, expose it on 3000 externally to not clash
+      - "3000:80"
     volumes:
       # Map the host source code for instant Vite HMR
       - ./frontend:/app
