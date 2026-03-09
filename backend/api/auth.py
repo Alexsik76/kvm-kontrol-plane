@@ -17,15 +17,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from sqlmodel import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.dependencies import SessionDep
 from core.security import (
     create_access_token,
     create_refresh_token,
     verify_password,
     verify_token,
 )
-from db.session import get_db
 from models.user import User
 from schemas.auth import RefreshRequest, TokenResponse
 
@@ -41,7 +40,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 )
 async def login(
     credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: SessionDep,
 ) -> TokenResponse:
     """Authenticate with username + password; return an access/refresh token pair.
 
@@ -79,7 +78,7 @@ async def login(
 )
 async def refresh(
     body: RefreshRequest,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: SessionDep,
 ) -> TokenResponse:
     """Exchange a valid refresh token for a new access + refresh token pair.
 

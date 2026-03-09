@@ -13,18 +13,14 @@ Browser WebSocket clients cannot set the ``Authorization`` header.  The JWT
 access token is therefore passed as a query parameter:
     wss://kvm.local/api/v1/nodes/{id}/ws?token=<access_token>
 
-The WebSocketProxyService validates the token before accepting the WS
 connection so unauthenticated clients receive a close frame with code 4001
 instead of being accepted and immediately dropped.
 """
 
 import logging
-from typing import Annotated
+from fastapi import APIRouter, Query, WebSocket
 
-from fastapi import APIRouter, Depends, Query, WebSocket
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from db.session import get_db
+from core.dependencies import SessionDep
 from services.ws_proxy import WebSocketProxyService
 
 logger = logging.getLogger(__name__)
@@ -39,7 +35,7 @@ _proxy_service = WebSocketProxyService()
 async def websocket_proxy(
     websocket: WebSocket,
     node_id: str,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: SessionDep,
     token: str = Query(..., description="JWT access token (Bearer value)."),
 ) -> None:
     """Bidirectional WebSocket proxy between the browser and the RPi control server.

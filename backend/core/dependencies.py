@@ -39,17 +39,24 @@ from models.user import User
 from models.user_node_permission import UserNodePermission
 
 # ---------------------------------------------------------------------------
+# Type Aliases for common dependencies
+# ---------------------------------------------------------------------------
+SessionDep = Annotated[AsyncSession, Depends(get_db)]
+
+# ---------------------------------------------------------------------------
 # OAuth2 scheme — clients send:  Authorization: Bearer <access_token>
 # ---------------------------------------------------------------------------
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
 
 # ---------------------------------------------------------------------------
 # get_current_user
 # ---------------------------------------------------------------------------
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    token: TokenDep,
+    db: SessionDep,
 ) -> User:
     """Validate the JWT and return the authenticated User from the database.
 
@@ -89,6 +96,9 @@ async def get_current_user(
     return user
 
 
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
 # ---------------------------------------------------------------------------
 # require_node_access — permission-checked node resolver
 # ---------------------------------------------------------------------------
@@ -121,8 +131,8 @@ def require_node_access(*, require_control: bool = False):
 
     async def _inner(
         node_id: uuid.UUID,
-        current_user: Annotated[User, Depends(get_current_user)],
-        db: Annotated[AsyncSession, Depends(get_db)],
+        current_user: CurrentUser,
+        db: SessionDep,
     ) -> KvmNode:
         """Resolve the KvmNode and verify the user's permission to access it."""
         # 1. Resolve the node

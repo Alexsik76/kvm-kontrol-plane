@@ -17,10 +17,8 @@ import uuid
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.dependencies import get_current_user, require_node_access
-from db.session import get_db
+from core.dependencies import CurrentUser, SessionDep, require_node_access
 from models.kvm_node import KvmNode
 from models.user import User
 from schemas.kvm_node import KvmNodeCreate, KvmNodeRead, KvmNodeUpdate, NodeStatusRead
@@ -29,7 +27,7 @@ from services import node_manager
 router = APIRouter(prefix="/nodes", tags=["kvm-nodes"])
 
 
-def _require_superuser(current_user: User = Depends(get_current_user)) -> User:
+def _require_superuser(current_user: CurrentUser) -> User:
     """Dependency: restrict endpoint to superusers."""
     if not current_user.is_superuser:
         raise HTTPException(
@@ -41,8 +39,8 @@ def _require_superuser(current_user: User = Depends(get_current_user)) -> User:
 
 @router.get("", response_model=List[KvmNodeRead], summary="List all KVM nodes.")
 async def list_nodes(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    _current_user: Annotated[User, Depends(get_current_user)],
+    db: SessionDep,
+    _current_user: CurrentUser,
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
 ) -> List[KvmNodeRead]:
@@ -63,7 +61,7 @@ async def list_nodes(
 )
 async def create_node(
     data: KvmNodeCreate,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: SessionDep,
     _superuser: Annotated[User, Depends(_require_superuser)],
 ) -> KvmNodeRead:
     """Create a new KVM node record.  Internal IP is stored but never sent to clients."""
@@ -87,7 +85,7 @@ async def get_node(
 async def update_node(
     node_id: uuid.UUID,
     data: KvmNodeUpdate,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: SessionDep,
     _superuser: Annotated[User, Depends(_require_superuser)],
 ) -> KvmNodeRead:
     """Partially update a KVM node's configuration."""
@@ -107,7 +105,7 @@ async def update_node(
 )
 async def delete_node(
     node_id: uuid.UUID,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: SessionDep,
     _superuser: Annotated[User, Depends(_require_superuser)],
 ) -> None:
     """Remove a KVM node and all associated permission records (cascade delete)."""
