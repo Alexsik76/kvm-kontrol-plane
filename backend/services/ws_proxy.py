@@ -53,6 +53,7 @@ from core.security import verify_token
 from models.kvm_node import KvmNode
 from models.user import User
 from models.user_node_permission import UserNodePermission
+from services.node_url import get_node_ws_url
 
 logger = logging.getLogger(__name__)
 
@@ -161,7 +162,7 @@ class WebSocketProxyService:
         # ------------------------------------------------------------------
         await client_ws.accept()
 
-        upstream_uri = f"ws://{node.internal_ip}:{node.ws_port}/ws/control"
+        upstream_uri = get_node_ws_url(node)
         logger.info(
             "WS proxy: user '%s' connecting to node '%s' at %s",
             user.username,

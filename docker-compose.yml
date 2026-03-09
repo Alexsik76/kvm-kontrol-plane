@@ -13,7 +13,6 @@
 # ==============================================================================
 
 services:
-
   # ----------------------------------------------------------------------------
   # FastAPI application (Uvicorn ASGI server)
   # ----------------------------------------------------------------------------
@@ -28,7 +27,7 @@ services:
       - ./backend/.env
     ports:
       # Exposed directly on the host (no proxy layer).
-      - "8000:8000"
+      - "8005:8000"
     volumes:
       # Mount host directory for hot-reload and saving migrations to host
       - ./backend:/app
@@ -52,7 +51,7 @@ services:
     volumes:
       # Map the host source code for instant Vite HMR
       - ./frontend:/app
-      # Do not overwrite the container's node_modules with the host's 
+      # Do not overwrite the container's node_modules with the host's
       # (prevents binary mismatches if host/container OS differ)
       - /app/node_modules
     depends_on:
@@ -75,7 +74,7 @@ services:
     volumes:
       - kvm_pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5435:5432"
     networks:
       - kvm_internal
     healthcheck:

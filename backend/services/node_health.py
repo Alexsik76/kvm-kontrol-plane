@@ -16,6 +16,7 @@ from core.config import settings
 from db.session import AsyncSessionLocal
 from models.kvm_node import KvmNode
 from schemas.kvm_node import NodeStatus
+from services.node_url import get_node_http_url
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +54,13 @@ class NodeHealthService:
             await db.commit()
 
     async def _check_node(self, db, node: KvmNode) -> None:
-        """Ping a single node's MediaMTX WHEP port and update its status."""
+        """Ping a single node's MediaMTX WHEP endpoint and update its status.
 
-        # Check if the WebRTC streaming port is open and responding.
-        # Since the API port (9997) is closed on the user's Pi, we ping port 8889.
-        url = f"http://{node.internal_ip}:8889/{node.stream_name}/whep"
+        Uses get_node_http_url() which prefers the Cloudflare Tunnel URL over
+        the legacy internal_ip:port scheme when tunnel_url is configured.
+        """
+        # Build the WHEP URL via the centralised URL helper
+        url = get_node_http_url(node)
 
         is_online = False
         try:

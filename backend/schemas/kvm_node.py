@@ -30,7 +30,13 @@ class KvmNodeBase(SQLModel):
     )
     internal_ip: str = Field(
         ...,
-        description="Internal (tunnel) IP address of the Raspberry Pi.",
+        description="Fallback VPN/LAN IP address of the Raspberry Pi.",
+    )
+    tunnel_url: Optional[str] = Field(
+        default=None,
+        max_length=255,
+        description="Cloudflare Tunnel HTTPS base URL (e.g. https://pi4.lab.vn.ua). "
+        "When set, overrides internal_ip + ports for all backend→RPi calls.",
     )
     ws_port: int = Field(default=8080, ge=1, le=65535)
     mediamtx_api_port: int = Field(default=9997, ge=1, le=65535)
@@ -53,6 +59,11 @@ class KvmNodeUpdate(SQLModel):
 
     name: Optional[str] = Field(None, min_length=1, max_length=64)
     internal_ip: Optional[str] = None
+    tunnel_url: Optional[str] = Field(
+        None,
+        max_length=255,
+        description="Cloudflare Tunnel HTTPS base URL. Set to empty string to clear.",
+    )
     ws_port: Optional[int] = Field(None, ge=1, le=65535)
     mediamtx_api_port: Optional[int] = Field(None, ge=1, le=65535)
     stream_name: Optional[str] = Field(None, min_length=1, max_length=64)

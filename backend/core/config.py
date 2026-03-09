@@ -71,6 +71,14 @@ class Settings(BaseSettings):
     NODE_POLL_INTERVAL_SECONDS: int = 15
     NODE_HTTP_TIMEOUT_SECONDS: int = 5
 
+    # --- Cloudflare Tunnels ---
+    # Public HTTPS URL of this Control-Plane API (used in CORS, docs, etc.)
+    KVM_API_TUNNEL_URL: str = "https://kvm-api.lab.vn.ua"
+    # Default Cloudflare Tunnel HTTPS URL for RPi nodes.
+    # Used as fallback when a node's tunnel_url field is empty.
+    # Leave empty to force per-node configuration.
+    NODE_DEFAULT_TUNNEL_URL: str = "https://pi4.lab.vn.ua"
+
     # --- MediaMTX Node Authentication ---
     MEDIAMTX_USERNAME: str = "pi_admin"  # Default placeholder
     MEDIAMTX_PASSWORD: str = "pi_secure_pass"  # Default placeholder

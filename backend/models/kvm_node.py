@@ -32,14 +32,17 @@ class NodeStatus(str, PyEnum):
 class KvmNode(SQLModel, table=True):
     """Represents a single Raspberry Pi KVM node.
 
-    The ``internal_ip`` and ports are used by backend services to communicate
-    with the node over the private VPN tunnel — never exposed to the browser.
+    The ``tunnel_url`` takes priority over ``internal_ip`` + ports when building
+    upstream URLs.  Set it to the Cloudflare Tunnel HTTPS address of the RPi
+    (e.g. ``https://pi4.lab.vn.ua``).  If empty, the backend falls back to the
+    legacy ``internal_ip:port`` scheme.
 
     Columns
     -------
     id                  Primary key (UUID v4).
     name                Human-readable label for the node.
-    internal_ip         VPN/tunnel IP of the Raspberry Pi (e.g. 10.8.0.10).
+    internal_ip         Fallback VPN/LAN IP of the Raspberry Pi (e.g. 10.8.0.10).
+    tunnel_url          Cloudflare Tunnel HTTPS base URL (overrides internal_ip).
     ws_port             Port of the local WebSocket control server (default 8080).
     mediamtx_api_port   Port of the MediaMTX HTTP API (default 9997).
     status              Current health state (see NodeStatus enum).
@@ -55,7 +58,13 @@ class KvmNode(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(max_length=64, unique=True, nullable=False)
-    internal_ip: str = Field(max_length=45, nullable=False)  # IPv4/IPv6
+    internal_ip: str = Field(max_length=45, nullable=False)  # IPv4/IPv6 fallback
+    tunnel_url: Optional[str] = Field(
+        default=None,
+        sa_column=Column(sa.String(255), nullable=True),
+        description="Cloudflare Tunnel HTTPS base URL (e.g. https://pi4.lab.vn.ua). "
+        "When set, overrides internal_ip + ports for all backend→RPi calls.",
+    )
     ws_port: int = Field(default=8080, nullable=False)
     mediamtx_api_port: int = Field(default=9997, nullable=False)
     stream_name: str = Field(
