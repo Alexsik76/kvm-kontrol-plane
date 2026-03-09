@@ -47,6 +47,11 @@ services:
       dockerfile: Dockerfile
     container_name: kvm_frontend
     restart: unless-stopped
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      - VITE_API_BASE_URL=${KVM_API_TUNNEL_URL}
     ports:
       - "3000:3000"
     volumes:
