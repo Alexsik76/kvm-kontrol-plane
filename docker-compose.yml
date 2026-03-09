@@ -24,6 +24,8 @@ services:
     container_name: kvm_api
     restart: unless-stopped
     env_file:
+      - path: .env
+        required: false
       - path: ./backend/.env
         required: false
     ports:
@@ -48,6 +50,8 @@ services:
     container_name: kvm_frontend
     restart: unless-stopped
     env_file:
+      - path: .env
+        required: false
       - path: ./backend/.env
         required: false
     environment:
