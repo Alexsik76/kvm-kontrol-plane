@@ -132,35 +132,22 @@ const captureAndUploadScreenshot = async () => {
 const isCaptured = ref(false)
 
 const startCapture = () => {
-  if (videoRef.value) {
-    videoRef.value.requestPointerLock()
-    videoRef.value.focus()
-  }
+  isCaptured.value = true
+  emit('capture-change', true)
+  videoRef.value?.focus()
+  window.addEventListener('keydown', handleKeyDown)
+  window.addEventListener('keyup', handleKeyUp)
 }
 
 const stopCapture = () => {
-  document.exitPointerLock()
-}
-
-// Global listener for Pointer Lock state
-const handlePointerLockChange = () => {
-  const captured = document.pointerLockElement === videoRef.value
-  isCaptured.value = captured
-  emit('capture-change', captured)
-  
-  if (captured) {
-    videoRef.value?.focus()
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-  } else {
-    window.removeEventListener('keydown', handleKeyDown)
-    window.removeEventListener('keyup', handleKeyUp)
-  }
+  isCaptured.value = false
+  emit('capture-change', false)
+  window.removeEventListener('keydown', handleKeyDown)
+  window.removeEventListener('keyup', handleKeyUp)
 }
 
 onMounted(() => {
   startStream()
-  document.addEventListener('pointerlockchange', handlePointerLockChange)
 })
 
 onBeforeUnmount(() => {
@@ -168,9 +155,7 @@ onBeforeUnmount(() => {
     peerConnection.close()
     peerConnection = null
   }
-  document.removeEventListener('pointerlockchange', handlePointerLockChange)
-  window.removeEventListener('keydown', handleKeyDown)
-  window.removeEventListener('keyup', handleKeyUp)
+  stopCapture() // Ensure listeners are removed
   if (wsConnection) {
     wsConnection.onclose = null // Prevent auto-reconnect
     wsConnection.close()
@@ -346,6 +331,7 @@ const handleContextMenu = (e: Event) => {
       @mousedown="handleMouseDown"
       @mouseup="handleMouseUp"
       @wheel="handleWheel"
+      @mouseleave="stopCapture"
       @contextmenu="handleContextMenu"
       class="w-100 h-100"
       :style="{ objectFit: 'contain', background: '#000', outline: 'none', cursor: isCaptured ? 'none' : 'crosshair' }"
