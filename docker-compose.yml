@@ -23,11 +23,17 @@ services:
       target: runtime
     container_name: kvm_api
     restart: unless-stopped
-    env_file:
-      - path: .env
-        required: false
-      - path: ./backend/.env
-        required: false
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:-admin}
+      - FIRST_SUPERUSER_EMAIL=${FIRST_SUPERUSER_EMAIL:-admin@kvm.local}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD}
+      - NODE_POLL_INTERVAL_SECONDS=${NODE_POLL_INTERVAL_SECONDS:-15}
+      - NODE_HTTP_TIMEOUT_SECONDS=${NODE_HTTP_TIMEOUT_SECONDS:-5}
+      - KVM_API_TUNNEL_URL=${KVM_API_TUNNEL_URL}
+      - NODE_DEFAULT_TUNNEL_URL=${NODE_DEFAULT_TUNNEL_URL}
+      - CORS_ORIGINS=${CORS_ORIGINS}
     ports:
       # Exposed directly on the host (no proxy layer).
       - "8005:8000"
@@ -49,11 +55,6 @@ services:
       dockerfile: Dockerfile
     container_name: kvm_frontend
     restart: unless-stopped
-    env_file:
-      - path: .env
-        required: false
-      - path: ./backend/.env
-        required: false
     environment:
       - VITE_API_BASE_URL=${KVM_API_TUNNEL_URL}
     ports:
