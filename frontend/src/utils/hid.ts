@@ -39,22 +39,23 @@ const MODIFIER_CODES = new Set([
   'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight'
 ]);
 
-// Returns standard format for backend websocket
 export const createKeyboardEventMessage = (e: KeyboardEvent, isDown: boolean) => {
   const code = KEY_CODE_TO_HID[e.code];
   const modifiers = getModifiersByte(e);
   
-  // If it's a completely unknown key, ignore it. 
-  // We explicitly check MODIFIER_CODES so we don't drop the keyup event when a modifier is released 
-  // (which would have code=undefined and modifiers=0).
-  if (!code && !MODIFIER_CODES.has(e.code)) return null;
+  // Modifiers alone don't have a 'code' in our list (we map the modifier state instead to byte 0),
+  // but we still need to send the report when a modifier is pressed/released so the server knows the state changed.
+  if (code === undefined && !MODIFIER_CODES.has(e.code)) return null;
 
-  // In Go, []byte in a standard JSON struct unmarshals from a Base64 encoded string.
-  // The test script worked because it passed the struct, which Go marshaled to Base64 automatically over WS,
-  // but from JS, we are sending a raw number array `[4]`. We need to use base64 exactly like Go does.
-  const keysArray = isDown && code ? [code] : [];
-  // Convert JS number array to Uint8Array, then to base64 string
-  const base64Keys = btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(keysArray))));
+  const keysArray = isDown && code !== undefined ? [code] : [];
+  
+  // Uint8Array to base64
+  const bytes = new Uint8Array(keysArray);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64Keys = btoa(binary);
 
   return {
     type: "keyboard",
