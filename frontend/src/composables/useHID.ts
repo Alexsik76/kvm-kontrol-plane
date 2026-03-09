@@ -12,35 +12,46 @@ export function useHID(nodeId: Ref<string>) {
     }
   }
 
+  let reconnectAttempts = 0
+  const maxReconnectAttempts = 10
+  const baseDelay = 3000
+
   const connectHID = () => {
     if (!nodeId.value) return
     
     if (wsConnection.value) {
+      wsConnection.value.onclose = null
       wsConnection.value.close()
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const wsUrl = `${protocol}//${window.location.host}/api/v1/nodes/${nodeId.value}/ws?token=${authStore.accessToken}`
-    console.log('Connecting to HID Server via backend proxy:', wsUrl)
     
     wsConnection.value = new WebSocket(wsUrl)
     
     wsConnection.value.onopen = () => {
       isHidConnected.value = true
+      reconnectAttempts = 0
       console.log('HID WebSocket connected')
     }
     
     wsConnection.value.onclose = () => {
       isHidConnected.value = false
-      console.log('HID WebSocket closed')
-      // Auto-reconnect after 3s
-      setTimeout(() => {
-        if (nodeId.value) connectHID()
-      }, 3000)
+      
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++
+        const delay = Math.min(baseDelay * reconnectAttempts, 30000)
+        console.log(`HID WebSocket closed. Retrying in ${delay}ms (attempt ${reconnectAttempts}/${maxReconnectAttempts})`)
+        setTimeout(() => {
+          if (nodeId.value) connectHID()
+        }, delay)
+      } else {
+        console.error('Max HID reconnection attempts reached.')
+      }
     }
     
-    wsConnection.value.onerror = (err) => {
-      console.error('HID WebSocket error:', err)
+    wsConnection.value.onerror = () => {
+      // Error handling is mostly covered by onclose
     }
   }
 

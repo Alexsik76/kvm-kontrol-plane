@@ -62,33 +62,60 @@ const handleKeyUp = (e: KeyboardEvent) => {
   if (msg) sendHIDMessage(msg)
 }
 
+let accX = 0
+let accY = 0
+let lastButtons = 0
+
 const handleMouseMove = (e: MouseEvent) => {
   if (!isCaptured.value || !videoRef.value) return
   e.preventDefault()
   
   if (e.movementX === 0 && e.movementY === 0) return
 
-  const scaleX = videoRef.value.videoWidth / videoRef.value.clientWidth
-  const scaleY = videoRef.value.videoHeight / videoRef.value.clientHeight
+  const v = videoRef.value
+  const cw = v.clientWidth
+  const ch = v.clientHeight
+  const vw = v.videoWidth
+  const vh = v.videoHeight
 
-  const adjustedX = Math.round(e.movementX * scaleX)
-  const adjustedY = Math.round(e.movementY * scaleY)
+  if (cw === 0 || ch === 0 || vw === 0 || vh === 0) return
 
-  const msg = createMouseEventMessage(e.buttons, adjustedX, adjustedY, 0)
-  sendHIDMessage(msg)
+  const scaleX = vw / cw
+  const scaleY = vh / ch
+
+  accX += e.movementX * scaleX
+  accY += e.movementY * scaleY
+  lastButtons = e.buttons
+
+  // Optimization: only send if we have enough accumulated movement OR wait for the next frame
+  // For now, let's keep it simple: send if we have moved at least 1 pixel in any direction
+  // to maintain sub-pixel precision in the accumulator
+  if (Math.abs(accX) >= 1 || Math.abs(accY) >= 1) {
+    const finalX = Math.round(accX)
+    const finalY = Math.round(accY)
+    
+    if (finalX !== 0 || finalY !== 0) {
+      const msg = createMouseEventMessage(lastButtons, finalX, finalY, 0)
+      sendHIDMessage(msg)
+      accX -= finalX
+      accY -= finalY
+    }
+  }
 }
 
 const handleMouseDown = (e: MouseEvent) => {
   if (!isCaptured.value) return
   e.preventDefault()
-  const msg = createMouseEventMessage(e.buttons, 0, 0, 0)
+  lastButtons = e.buttons
+  const msg = createMouseEventMessage(lastButtons, 0, 0, 0)
   sendHIDMessage(msg)
 }
 
 const handleMouseUp = (e: MouseEvent) => {
   if (!isCaptured.value) return
   e.preventDefault()
-  const msg = createMouseEventMessage(e.buttons, 0, 0, 0)
+  lastButtons = e.buttons
+  const msg = createMouseEventMessage(lastButtons, 0, 0, 0)
   sendHIDMessage(msg)
 }
 
@@ -100,7 +127,6 @@ const handleWheel = (e: WheelEvent) => {
   sendHIDMessage(msg)
 }
 
-// Disable context menu on the video element to prevent Right-click blocking
 const handleContextMenu = (e: Event) => {
   e.preventDefault()
 }
