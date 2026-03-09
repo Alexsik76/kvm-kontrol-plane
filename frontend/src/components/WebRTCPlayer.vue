@@ -239,6 +239,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
   
   // Custom exit shortcut: Shift + Escape
   if (e.code === 'Escape' && e.shiftKey) {
+    e.preventDefault()
     stopCapture()
     return;
   }
@@ -331,7 +332,6 @@ const handleContextMenu = (e: Event) => {
       @mousedown="handleMouseDown"
       @mouseup="handleMouseUp"
       @wheel="handleWheel"
-      @mouseleave="stopCapture"
       @contextmenu="handleContextMenu"
       class="w-100 h-100"
       :style="{ objectFit: 'contain', background: '#000', outline: 'none', cursor: isCaptured ? 'none' : 'crosshair' }"
