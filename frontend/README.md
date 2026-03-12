@@ -7,15 +7,23 @@ This is a modern web interface for remote server management via IP-KVM, built wi
 ### High-Performance Remote Control
 A custom input handling system captures and proxies keyboard and mouse events directly to the KVM node.
 
-- **Intelligent Mouse Scaling**: Automatically calculates the ratio between the video's stream resolution and its display size to ensure consistent 1:1 movement accuracy.
-- **Event Coalescing**: Consecutive mouse movements are merged in the message queue to prevent network congestion while maintaining absolute movement precision.
-- **RAF Batching**: Input events are dispatched using the browser's `requestAnimationFrame` loop, reducing WebSocket overhead and ensuring smooth window dragging even under high-frequency movement.
-- **HID Protocol Mapping**: Maps JavaScript keyboard events to raw USB HID scancodes for maximum compatibility with remote BIOS/UEFI and operating systems.
+- **Intelligent Mouse Scaling**: Automatically calculates the ratio between the video's stream resolution and its display size.
+- **Event Coalescing & RAF Batching**: Consecutive events are merged and dispatched using `requestAnimationFrame` to ensure smooth performance.
+- **HID Protocol Mapping**: Maps JavaScript events to raw USB HID scancodes for BIOS/UEFI and OS compatibility.
+- **MODULAR ARCHITECTURE**: Logic is split into specialized units: `useFullscreen`, `useMouseInput`, and `useKeyboardInput` for better maintainability.
 
-### Remote Escape Logic
-Special handling for the Escape key allows for both local interface control and remote system interaction:
-- **Local Exit**: Press `ESC` to release the mouse and exit the capture mode.
-- **Remote Escape**: Press `Alt + ESC` to send a raw Escape key to the remote computer.
+### Input Shortcuts & Logic
+Special handling for the Escape key and system shortcuts ensures both local control and remote system interaction:
+
+#### Windowed Mode
+- **Local Exit**: Press `ESC` to release the mouse and exit focus.
+- **Remote Escape**: Press `Alt + ~` (Backtick/Tilde) to send a raw Escape key to the remote host.
+
+#### Professional Mode (Fullscreen)
+- **Keyboard Lock**: Captures system keys like `Alt+Tab` and `Windows Key` for a native experience.
+- **Panel Toggle**: Press `Alt + P` to toggle the Control Panel. This releases the local mouse for UI interaction.
+- **Auto-Relock**: Clicking any panel action (like **Ctrl+Alt+Del**) or the close button automatically re-locks the mouse to the remote host.
+- **Exit**: **Hold ESC** for 2 seconds to exit fullscreen and release keyboard lock.
 
 ### Low-Latency Video Streaming
 Utilizes WebRTC for near-instant provides video feedback from the KVM node.
@@ -32,9 +40,9 @@ Utilizes WebRTC for near-instant provides video feedback from the KVM node.
 - **Build Tool**: Vite
 
 ### Key Composables
-- `useWebRTC`: Manages the RTCPeerConnection, signaling, and video stream lifecycle.
-- `useHID`: Handles WebSocket communication for HID reports, including message queuing and performance optimizations.
-- `usePlayerInput`: Central logic for capturing raw browser events and converting them into KVM-compatible payloads.
+- `useWebRTC`: Manages the RTCPeerConnection and video stream lifecycle.
+- `useHID`: Handles WebSocket communication for HID reports.
+- `usePlayerInput`: A clean coordinator orchestrating the modular input composables.
 
 ## Project Structure
 - `/src/components`: UI components including the WebRTC player and capture overlays.
