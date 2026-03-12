@@ -33,6 +33,6 @@ defineEmits<{
     <v-icon icon="mdi-cursor-default-click" size="64" color="white" class="mb-4"></v-icon>
     <div class="text-h5 text-white font-weight-bold">Click to Control</div>
     <div class="text-body-1 text-grey-lighten-2 mt-2">Mouse will be locked. Press <strong>ESC</strong> to exit</div>
-    <div class="text-caption text-grey-lighten-1 mt-1">Press <strong>Alt+ESC</strong> to send Escape to remote computer</div>
+    <div class="text-caption text-grey-lighten-1 mt-1">Press <strong>Alt+` (Backquote)</strong> to send Escape to remote computer</div>
   </div>
 </template>

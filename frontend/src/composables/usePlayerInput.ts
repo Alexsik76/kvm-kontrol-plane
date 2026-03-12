@@ -19,8 +19,8 @@ export function usePlayerInput(
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!isCaptured.value) return;
 
-    // Remote Escape via Alt + Escape
-    if (e.code === "Escape" && e.altKey) {
+    // Remote Escape via Alt + Backtick (~)
+    if (e.code === "Backquote" && e.altKey) {
       e.preventDefault();
       e.stopPropagation();
 
@@ -58,7 +58,7 @@ export function usePlayerInput(
   const handleKeyUp = (e: KeyboardEvent) => {
     if (!isCaptured.value) return;
 
-    if (e.code === "Escape" && e.altKey) {
+    if (e.code === "Backquote" && e.altKey) {
       e.preventDefault();
       e.stopPropagation();
 
