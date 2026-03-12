@@ -88,13 +88,15 @@ export function usePlayerInput(
 
   const flushMovement = () => {
     if (Math.abs(accX) >= 1 || Math.abs(accY) >= 1 || accWheel !== 0) {
-      const finalX = Math.round(accX);
-      const finalY = Math.round(accY);
+      // HID coordinate delta is 8-bit signed: [-127, 127]
+      const finalX = Math.max(-127, Math.min(127, Math.round(accX)));
+      const finalY = Math.max(-127, Math.min(127, Math.round(accY)));
       const finalWheel = accWheel;
 
       const msg = createMouseEventMessage(lastButtons, finalX, finalY, finalWheel);
       sendHIDMessage(msg);
       
+      // ONLY subtract what we actually sent to the backend
       accX -= finalX;
       accY -= finalY;
       accWheel = 0;

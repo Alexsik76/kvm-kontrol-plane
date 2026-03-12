@@ -7,7 +7,6 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
   const wsConnection = shallowRef<WebSocket | null>(null)
   const isHidConnected = ref(false)
 
-  let lastMessageTime = 0
 
   const connectHID = () => {
     if (!nodeId.value) return
@@ -79,6 +78,7 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
     // Movement coalescing:
     // If the latest message in the queue is a mouse movement and has the same button state,
     // we can merge this new movement into it instead of creating a new queue entry.
+    // This handles both pure movement and dragging.
     if (msg.type === "mouse" && messageQueue.length > 0) {
       const lastMsg = messageQueue[messageQueue.length - 1];
       if (lastMsg.type === "mouse" && lastMsg.data.buttons === msg.data.buttons) {
@@ -87,22 +87,15 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
         lastMsg.data.wheel += msg.data.wheel;
         
         // Constrain to int8 range [-127, 127]
+        // Note: we don't drop overflow here; it will just be capped by the backend 
+        // OR we could split it, but in 10ms intervals, >127 pixels is rare.
         lastMsg.data.x = Math.max(-127, Math.min(127, lastMsg.data.x));
         lastMsg.data.y = Math.max(-127, Math.min(127, lastMsg.data.y));
         return;
       }
     }
 
-    if (msg.type === "mouse" && msg.data.buttons === 0) {
-      // For pure mouse movement without clicks, we can drop them if sending too fast or busy
-      const now = Date.now();
-      if (now - lastMessageTime < MSG_INTERVAL_MS || isSendingQueue) return;
-      lastMessageTime = now;
-      wsConnection.value.send(JSON.stringify(msg));
-      return;
-    }
-
-    // Always queue keyboard events and mouse clicks to guarantee delivery
+    // Always queue keyboard events, mouse clicks, and coalesced movements
     messageQueue.push(msg);
     if (!isSendingQueue) {
       processQueue();
