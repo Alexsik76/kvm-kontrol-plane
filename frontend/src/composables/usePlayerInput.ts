@@ -54,27 +54,15 @@ export function usePlayerInput(
   };
 
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isCaptured.value || !videoRef.value) return;
+    if (!isCaptured.value) return;
     e.preventDefault();
 
     if (e.movementX === 0 && e.movementY === 0) return;
 
-    const v = videoRef.value;
-    const cw = v.clientWidth;
-    const ch = v.clientHeight;
-    const vw = v.videoWidth;
-    const vh = v.videoHeight;
-
-    if (cw === 0 || ch === 0 || vw === 0 || vh === 0) return;
-
-    const scaleX = vw / cw;
-    const scaleY = vh / ch;
-
-    accX += e.movementX * scaleX;
-    accY += e.movementY * scaleY;
+    accX += e.movementX;
+    accY += e.movementY;
     lastButtons = e.buttons;
 
-    // Send if we have moved at least 1 pixel
     if (Math.abs(accX) >= 1 || Math.abs(accY) >= 1) {
       const finalX = Math.round(accX);
       const finalY = Math.round(accY);

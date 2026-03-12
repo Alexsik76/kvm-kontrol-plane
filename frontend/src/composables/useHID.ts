@@ -1,5 +1,6 @@
 import { ref, shallowRef, watch, onBeforeUnmount, type Ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { resetKeyboardState } from '../utils/hid'
 
 export function useHID(nodeId: Ref<string>, onReset?: () => void) {
   const authStore = useAuthStore()
@@ -35,16 +36,21 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
     }
 
     wsConnection.value.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data)
-        if (msg.type === 'reset_hid') {
-          console.warn('HID Server requested state reset (NACK)')
-          if (onReset) onReset()
-        }
-      } catch (err) {
-        console.error('Failed to parse HID WS message:', err)
-      }
+  try {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'reset_hid') {
+      console.warn('HID Server requested state reset (NACK)');
+      
+      // Clears local sets and generates { type: "keyboard", data: { modifiers: 0, keys: "" } }
+      const resetMsg = resetKeyboardState();
+      sendHIDMessage(resetMsg);
+
+      if (onReset) onReset();
     }
+  } catch (err) {
+    console.error('Failed to parse HID WS message:', err);
+  }
+};
   }
 
   const MSG_INTERVAL_MS = 15;
