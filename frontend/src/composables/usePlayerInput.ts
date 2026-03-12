@@ -135,7 +135,7 @@ export function usePlayerInput(
 
    try {
       if (!document.fullscreenElement && videoRef.value) {
-        await videoRef.value.requestFullscreen();
+        await videoRef.value.parentElement?.requestFullscreen();
       }
       await videoRef.value?.requestPointerLock();
     } catch (err) {
