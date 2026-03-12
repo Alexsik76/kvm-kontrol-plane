@@ -11,7 +11,6 @@ const authStore = useAuthStore()
 const nodeId = route.params.id as string
 const node = ref<any>(null)
 
-const playerRef = ref<InstanceType<typeof WebRTCPlayer> | null>(null)
 const isHidCaptured = ref(false)
 
 // Values passed up from WebRTCPlayer component
@@ -85,7 +84,6 @@ onMounted(() => {
           <!-- Extracted WebRTC Player -->
           <v-col cols="12" md="8" lg="9" class="d-flex flex-column h-100">
             <WebRTCPlayer 
-              ref="playerRef"
               :node-id="nodeId" 
               :node-ip="node?.internal_ip"
               @status-changed="handleStreamStatus" 

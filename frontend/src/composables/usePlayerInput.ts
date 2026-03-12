@@ -89,8 +89,22 @@ export function usePlayerInput(
 
     if (e.movementX === 0 && e.movementY === 0) return;
 
-    accX += e.movementX;
-    accY += e.movementY;
+    // Dynamic scaling:
+    // Browser movementX/Y is in CSS pixels of the video element.
+    // We need to scale it to the actual video resolution to feel 1:1.
+    const video = videoRef.value;
+    let scaleX = 1;
+    let scaleY = 1;
+
+    if (video && video.clientWidth > 0 && video.clientHeight > 0) {
+      scaleX = video.videoWidth / video.clientWidth;
+      scaleY = video.videoHeight / video.clientHeight;
+    }
+
+    // Apply scaling + additional sensitivity multiplier (1.5x)
+    const sensitivity = 1.5;
+    accX += e.movementX * scaleX * sensitivity;
+    accY += e.movementY * scaleY * sensitivity;
     lastButtons = e.buttons;
 
     if (Math.abs(accX) >= 1 || Math.abs(accY) >= 1) {
