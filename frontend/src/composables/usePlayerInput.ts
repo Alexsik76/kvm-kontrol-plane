@@ -123,7 +123,7 @@ export function usePlayerInput(
     e.preventDefault();
   };
 
-  const startCapture = () => {
+  const startCapture = async () => {
     // If there's a connection logic injected, reconnect/connect HID when stream is clicked
     if (connectHID) {
       connectHID()
@@ -133,10 +133,13 @@ export function usePlayerInput(
     emit("capture-change", true);
     videoRef.value?.focus();
 
-    try {
-      videoRef.value?.requestPointerLock();
+   try {
+      if (!document.fullscreenElement && videoRef.value) {
+        await videoRef.value.requestFullscreen();
+      }
+      await videoRef.value?.requestPointerLock();
     } catch (err) {
-      console.error("Pointer Lock failed:", err);
+      console.error("Pointer/Fullscreen Lock failed:", err);
     }
 
     // Try to lock the keyboard so we can intercept ESC and system keys
