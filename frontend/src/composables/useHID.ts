@@ -1,7 +1,7 @@
 import { ref, shallowRef, watch, onBeforeUnmount, type Ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 
-export function useHID(nodeId: Ref<string>) {
+export function useHID(nodeId: Ref<string>, onReset?: () => void) {
   const authStore = useAuthStore()
   const wsConnection = shallowRef<WebSocket | null>(null)
   const isHidConnected = ref(false)
@@ -32,6 +32,18 @@ export function useHID(nodeId: Ref<string>) {
     wsConnection.value.onclose = () => {
       isHidConnected.value = false
       console.log('HID WebSocket closed. No automatic reconnection.')
+    }
+
+    wsConnection.value.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data)
+        if (msg.type === 'reset_hid') {
+          console.warn('HID Server requested state reset (NACK)')
+          if (onReset) onReset()
+        }
+      } catch (err) {
+        console.error('Failed to parse HID WS message:', err)
+      }
     }
   }
 

@@ -3,6 +3,7 @@ import { ref, watch, toRef } from 'vue'
 import { useWebRTC } from '../composables/useWebRTC'
 import { useHID } from '../composables/useHID'
 import { usePlayerInput } from '../composables/usePlayerInput'
+import { resetKeyboardState } from '../utils/hid'
 import WebRTCCaptureOverlay from './WebRTCCaptureOverlay.vue'
 import WebRTCStatusOverlay from './WebRTCStatusOverlay.vue'
 
@@ -29,7 +30,10 @@ const {
   isHidConnected,
   sendHIDMessage,
   connectHID
-} = useHID(nodeId)
+} = useHID(nodeId, () => {
+  // Reset local state when backend NACKs a write failure
+  sendHIDMessage(resetKeyboardState())
+})
 
 const isCaptured = ref(false)
 
