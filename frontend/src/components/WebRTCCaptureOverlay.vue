@@ -19,7 +19,7 @@ defineEmits<{
   >
     <v-icon icon="mdi-keyboard" size="small" class="mr-1"></v-icon>
     <v-icon icon="mdi-mouse" size="small" class="mr-2"></v-icon>
-    <span v-if="isCaptured" class="font-weight-bold">HID Capture Active — Shift+ESC to Unlock</span>
+    <span v-if="isCaptured" class="font-weight-bold">HID Capture Active — ESC to Unlock</span>
     <span v-else>HID Ready</span>
   </div>
 
@@ -32,6 +32,7 @@ defineEmits<{
   >
     <v-icon icon="mdi-cursor-default-click" size="64" color="white" class="mb-4"></v-icon>
     <div class="text-h5 text-white font-weight-bold">Click to Control</div>
-    <div class="text-body-1 text-grey-lighten-2 mt-2">Mouse will be locked. Press <strong>Shift+ESC</strong> to exit</div>
+    <div class="text-body-1 text-grey-lighten-2 mt-2">Mouse will be locked. Press <strong>ESC</strong> to exit</div>
+    <div class="text-caption text-grey-lighten-1 mt-1">Press <strong>Alt+ESC</strong> to send Escape to remote computer</div>
   </div>
 </template>

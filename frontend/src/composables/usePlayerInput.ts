@@ -2,7 +2,7 @@ import { Ref, onMounted, onBeforeUnmount } from "vue";
 import {
   createKeyboardEventMessage,
   createMouseEventMessage,
-  resetKeyboardState
+  resetKeyboardState,
 } from "../utils/hid";
 
 export function usePlayerInput(
@@ -10,7 +10,7 @@ export function usePlayerInput(
   isCaptured: Ref<boolean>,
   sendHIDMessage: (msg: any) => void,
   emit: (e: "capture-change", captured: boolean) => void,
-  connectHID?: () => void
+  connectHID?: () => void,
 ) {
   let accX = 0;
   let accY = 0;
@@ -19,36 +19,66 @@ export function usePlayerInput(
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!isCaptured.value) return;
 
-    // Allow browser shortcuts
-    if (["F5", "F12"].includes(e.code)) return;
-
-    // Custom exit shortcut: Shift + Escape
-    if (e.code === "Escape" && e.shiftKey) {
+    // Remote Escape via Alt + Escape
+    if (e.code === "Escape" && e.altKey) {
       e.preventDefault();
-      // Important: if we just call stopCapture(), the browser stops propagating events,
-      // but the server might still have "Shift" pressed. stopCapture() clears the keyboard state 
-      // by calling resetKeyboardState(), which is good.
-      stopCapture();
+      e.stopPropagation();
+
+      // Create a fake event object to trick our HID utility
+      // or manually send the Escape code
+      const msg = createKeyboardEventMessage(
+        {
+          code: "Escape",
+          key: "Escape",
+          altKey: false,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          metaKey: e.metaKey,
+        } as KeyboardEvent,
+        true,
+      );
+
+      if (msg) sendHIDMessage(msg);
       return;
     }
 
+    // Regular Escape - let the browser handle it (exit capture)
+    if (e.code === "Escape") {
+      return;
+    }
+
+    // Rest of your key handling logic...
+    if (["F5", "F12"].includes(e.code)) return;
+
     e.preventDefault();
-    e.stopPropagation();
     const msg = createKeyboardEventMessage(e, true);
     if (msg) sendHIDMessage(msg);
   };
 
   const handleKeyUp = (e: KeyboardEvent) => {
     if (!isCaptured.value) return;
-    if (["F5", "F12"].includes(e.code)) return;
-    if (e.code === "Escape" && e.shiftKey) {
+
+    if (e.code === "Escape" && e.altKey) {
       e.preventDefault();
       e.stopPropagation();
+
+      const msg = createKeyboardEventMessage(
+        {
+          code: "Escape",
+          key: "Escape",
+          altKey: false,
+        } as KeyboardEvent,
+        false,
+      );
+
+      if (msg) sendHIDMessage(msg);
       return;
     }
 
+    if (e.code === "Escape") return;
+
+    // Rest of your keyup logic...
     e.preventDefault();
-    e.stopPropagation();
     const msg = createKeyboardEventMessage(e, false);
     if (msg) sendHIDMessage(msg);
   };
@@ -111,30 +141,20 @@ export function usePlayerInput(
     e.preventDefault();
   };
 
-  const startCapture = async () => {
+  const startCapture = () => {
     // If there's a connection logic injected, reconnect/connect HID when stream is clicked
     if (connectHID) {
-      connectHID()
+      connectHID();
     }
 
     isCaptured.value = true;
     emit("capture-change", true);
     videoRef.value?.focus();
 
-   try {
-      if (!document.fullscreenElement && videoRef.value) {
-        await videoRef.value.parentElement?.requestFullscreen();
-      }
-      await videoRef.value?.requestPointerLock();
+    try {
+      videoRef.value?.requestPointerLock();
     } catch (err) {
-      console.error("Pointer/Fullscreen Lock failed:", err);
-    }
-
-    // Try to lock the keyboard so we can intercept ESC and system keys
-    if ('keyboard' in navigator && (navigator as any).keyboard && (navigator as any).keyboard.lock) {
-      (navigator as any).keyboard.lock(['Escape']).catch((err: any) => {
-        console.warn('Keyboard lock failed (Escape might still exit pointer lock):', err)
-      })
+      console.error("Pointer Lock failed:", err);
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -150,15 +170,19 @@ export function usePlayerInput(
     sendHIDMessage(resetKeyboardState());
     sendHIDMessage({
       type: "mouse",
-      data: { buttons: 0, x: 0, y: 0, wheel: 0 }
+      data: { buttons: 0, x: 0, y: 0, wheel: 0 },
     });
 
     if (document.pointerLockElement === videoRef.value) {
       document.exitPointerLock();
     }
 
-    if ('keyboard' in navigator && (navigator as any).keyboard && (navigator as any).keyboard.unlock) {
-      (navigator as any).keyboard.unlock()
+    if (
+      "keyboard" in navigator &&
+      (navigator as any).keyboard &&
+      (navigator as any).keyboard.unlock
+    ) {
+      (navigator as any).keyboard.unlock();
     }
 
     window.removeEventListener("keydown", handleKeyDown);

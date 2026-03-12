@@ -107,7 +107,7 @@ onMounted(() => {
                 </v-alert>
 
                 <p class="text-body-2 text-medium-emphasis">
-                  Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>Shift+ESC</b> to release focus and unlock the mouse.
+                  Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>ESC</b> to release focus and unlock the mouse. To send <b>Escape</b> to the remote computer, use <b>Alt+ESC</b>.
                 </p>
               </v-card-text>
             </v-card>
