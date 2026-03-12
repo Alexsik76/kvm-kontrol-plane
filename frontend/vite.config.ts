@@ -62,8 +62,10 @@ export default defineConfig(({ command, mode }) => {
       },
       proxy: {
         '/api': {
-          target: 'http://api:8000',
+          target: env.VITE_API_BASE_URL || 'http://api:8000',
           changeOrigin: true,
+          ws: true,
+          rewrite: (path) => (env.VITE_API_BASE_URL ? path : path), // keep /api if it's part of the target URL or handled by backend
         },
       },
     },

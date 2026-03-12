@@ -46,6 +46,10 @@ export function useMouseInput(
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isCaptured.value) return;
+    
+    // Safety check: only send HID messages if pointer lock is active
+    if (!document.pointerLockElement) return;
+
     if (e.movementX === 0 && e.movementY === 0) return;
 
     const video = videoRef.value;
@@ -65,14 +69,15 @@ export function useMouseInput(
 
   const handleMouseDown = (e: MouseEvent) => {
     if (!isCaptured.value) return;
-    e.preventDefault();
-
-    if (document.pointerLockElement !== videoRef.value) {
+    
+    // If we are over the video and no pointer lock, try to acquire it
+    if (!document.pointerLockElement) {
       try {
         videoRef.value?.requestPointerLock();
       } catch (err) {}
     }
 
+    e.preventDefault();
     lastButtons = e.buttons;
     sendHIDMessage(createMouseEventMessage(lastButtons, 0, 0, 0));
   };

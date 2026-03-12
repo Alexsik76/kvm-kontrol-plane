@@ -1,4 +1,4 @@
-import { Ref, onMounted, onBeforeUnmount } from "vue";
+import { Ref, ref, onMounted, onBeforeUnmount } from "vue";
 import { resetKeyboardState } from "../utils/hid";
 import { useFullscreen } from "./useFullscreen";
 import { useMouseInput } from "./useMouseInput";
@@ -11,6 +11,9 @@ export function usePlayerInput(
   emit: (e: "capture-change", captured: boolean) => void,
   connectHID?: () => void,
 ) {
+  const showProPanel = ref(false);
+  const isUnlockingForUI = ref(false);
+
   const {
     isFullscreen,
     toggleFullscreen,
@@ -28,10 +31,24 @@ export function usePlayerInput(
     stopMouseLoop,
   } = useMouseInput(videoRef, isCaptured, sendHIDMessage);
 
+  const toggleProPanel = () => {
+    if (!isFullscreen.value) return;
+    
+    showProPanel.value = !showProPanel.value;
+    
+    if (showProPanel.value) {
+      isUnlockingForUI.value = true;
+      document.exitPointerLock();
+    } else {
+      videoRef.value?.requestPointerLock();
+    }
+  };
+
   const { handleKeyDown, handleKeyUp, sendCtrlAltDel } = useKeyboardInput(
     isCaptured,
     isFullscreen,
     sendHIDMessage,
+    toggleProPanel
   );
 
   const startCapture = () => {
@@ -57,6 +74,7 @@ export function usePlayerInput(
   const stopCapture = () => {
     if (!isCaptured.value) return;
     isCaptured.value = false;
+    showProPanel.value = false;
     emit("capture-change", false);
 
     stopMouseLoop();
@@ -77,8 +95,17 @@ export function usePlayerInput(
   };
 
   const handlePointerLockChange = () => {
-    if (!document.pointerLockElement && isCaptured.value) {
-      stopCapture();
+    if (!document.pointerLockElement) {
+        if (isUnlockingForUI.value) {
+            isUnlockingForUI.value = false;
+            return;
+        }
+        if (isCaptured.value) {
+            stopCapture();
+        }
+    } else {
+      // If we gained pointer lock, we hide the panel
+      showProPanel.value = false;
     }
   };
 
@@ -114,5 +141,7 @@ export function usePlayerInput(
     handleContextMenu: (e: Event) => e.preventDefault(),
     isFullscreen,
     sendCtrlAltDel,
+    showProPanel,
+    reLock: () => videoRef.value?.requestPointerLock()
   };
 }

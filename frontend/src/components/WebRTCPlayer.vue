@@ -36,7 +36,6 @@ const {
 })
 
 const isCaptured = ref(false)
-
 const {
   startCapture,
   stopCapture,
@@ -47,7 +46,9 @@ const {
   handleWheel,
   handleContextMenu,
   isFullscreen,
-  sendCtrlAltDel
+  sendCtrlAltDel,
+  showProPanel,
+  reLock
 } = usePlayerInput(videoRef, isCaptured, sendHIDMessage, emit, connectHID)
 
 // === Watchers ===
@@ -65,10 +66,12 @@ defineExpose({ startCapture, stopCapture })
       :is-hid-connected="isHidConnected"
       :is-captured="isCaptured"
       :is-fullscreen="isFullscreen"
+      :show-pro-panel="showProPanel"
       @start-capture="startCapture"
       @stop-capture="stopCapture"
       @toggle-fullscreen="toggleFullscreen"
       @send-ctrl-alt-del="sendCtrlAltDel"
+      @re-lock="reLock"
     />
 
     <!-- Video Element -->
@@ -84,7 +87,12 @@ defineExpose({ startCapture, stopCapture })
       @wheel="handleWheel"
       @contextmenu="handleContextMenu"
       class="w-100 h-100"
-      :style="{ objectFit: 'contain', background: '#000', outline: 'none', cursor: isCaptured ? 'none' : 'crosshair' }"
+      :style="{ 
+        objectFit: 'contain', 
+        background: '#000', 
+        outline: 'none', 
+        cursor: (isCaptured && !showProPanel) ? 'none' : 'default' 
+      }"
     ></video>
 
     <!-- Error & Loading Status Overlay -->

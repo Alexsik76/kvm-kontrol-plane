@@ -4,10 +4,19 @@ import { createKeyboardEventMessage } from "../utils/hid";
 export function useKeyboardInput(
   isCaptured: Ref<boolean>,
   isFullscreen: Ref<boolean>,
-  sendHIDMessage: (msg: any) => void
+  sendHIDMessage: (msg: any) => void,
+  onToggleMenu?: () => void
 ) {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!isCaptured.value) return;
+
+    // Control Panel Toggle via Alt + P
+    if (e.code === "KeyP" && e.altKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (onToggleMenu) onToggleMenu();
+      return;
+    }
 
     // Remote Escape via Alt + Backtick (~)
     if (e.code === "Backquote" && e.altKey) {
@@ -49,6 +58,12 @@ export function useKeyboardInput(
   const handleKeyUp = (e: KeyboardEvent) => {
     if (!isCaptured.value) return;
 
+    if (e.code === "KeyP" && e.altKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     if (e.code === "Backquote" && e.altKey) {
       e.preventDefault();
       e.stopPropagation();
@@ -80,14 +95,28 @@ export function useKeyboardInput(
   };
 
   const sendCtrlAltDel = () => {
-    const keys = ["ControlLeft", "AltLeft", "Delete"];
-    keys.forEach((k) =>
-      sendHIDMessage(createKeyboardEventMessage({ code: k } as any, true))
-    );
+    // We send a single report with modifiers and Delete key pressed
+    const msgDown = createKeyboardEventMessage({ 
+      code: "Delete", 
+      ctrlKey: true, 
+      altKey: true,
+      shiftKey: false,
+      metaKey: false
+    } as KeyboardEvent, true);
+    
+    if (msgDown) sendHIDMessage(msgDown);
+
     setTimeout(() => {
-      keys.forEach((k) =>
-        sendHIDMessage(createKeyboardEventMessage({ code: k } as any, false))
-      );
+      // Release Delete and modifiers
+      const msgUp = createKeyboardEventMessage({ 
+        code: "Delete", 
+        ctrlKey: false, 
+        altKey: false,
+        shiftKey: false,
+        metaKey: false
+      } as KeyboardEvent, false);
+      
+      if (msgUp) sendHIDMessage(msgUp);
     }, 50);
   };
 

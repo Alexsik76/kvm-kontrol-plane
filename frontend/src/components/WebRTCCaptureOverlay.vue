@@ -3,6 +3,7 @@ defineProps<{
   isHidConnected: boolean
   isCaptured: boolean
   isFullscreen: boolean
+  showProPanel: boolean
 }>()
 
 defineEmits<{
@@ -10,6 +11,7 @@ defineEmits<{
   (e: 'stop-capture'): void
   (e: 'toggle-fullscreen'): void
   (e: 'send-ctrl-alt-del'): void
+  (e: 're-lock'): void
 }>()
 </script>
 
@@ -19,11 +21,15 @@ defineEmits<{
     class="position-absolute text-caption px-3 py-1 rounded bg-black border"
     :class="isCaptured ? 'border-success text-success' : 'border-grey text-grey'"
     style="top: 8px; right: 8px; z-index: 20; opacity: 0.9; transition: opacity 0.3s;"
-    :style="{ opacity: isFullscreen && isCaptured ? 0 : 0.9 }"
+    :style="{ opacity: isFullscreen && isCaptured && !showProPanel ? 0 : 0.9 }"
   >
     <v-icon icon="mdi-keyboard" size="small" class="mr-1"></v-icon>
     <v-icon icon="mdi-mouse" size="small" class="mr-2"></v-icon>
-    <span v-if="isCaptured" class="font-weight-bold">HID Capture Active — ESC to Unlock</span>
+    <span v-if="isCaptured" class="font-weight-bold">
+      HID Capture Active — 
+      <template v-if="isFullscreen">Alt+P for Menu</template>
+      <template v-else>ESC to Unlock</template>
+    </span>
     <span v-else>HID Ready</span>
   </div>
 
@@ -31,8 +37,8 @@ defineEmits<{
   <div
     v-if="isFullscreen && isCaptured"
     class="pro-panel-container"
+    :class="{ 'panel-active': showProPanel }"
   >
-    <div class="pro-panel-trigger"></div>
     <div class="pro-panel-content d-flex align-center px-4 py-2 rounded-b-lg">
       <div class="d-flex align-center mr-4">
         <v-icon icon="mdi-remote-desktop" color="success" size="small" class="mr-2"></v-icon>
@@ -47,23 +53,28 @@ defineEmits<{
         color="warning" 
         class="mx-1" 
         prepend-icon="mdi-keyboard-variant"
-        @click="$emit('send-ctrl-alt-del')"
+        @click="$emit('send-ctrl-alt-del'); $emit('re-lock')"
       >
         Ctrl+Alt+Del
       </v-btn>
 
       <v-spacer></v-spacer>
 
-      <div class="text-caption text-grey-lighten-1 mr-4">
-        Esc goes to Remote. Hold Esc to Exit.
-      </div>
+      <v-btn 
+        variant="text" 
+        size="small" 
+        color="grey-lighten-1" 
+        icon="mdi-close"
+        class="mr-2"
+        @click="$emit('re-lock')"
+      ></v-btn>
 
       <v-btn 
         variant="flat" 
         size="small" 
         color="error" 
         prepend-icon="mdi-fullscreen-exit"
-        @click="$emit('toggle-fullscreen')"
+        @click="$emit('toggle-fullscreen'); $emit('re-lock')"
       >
         Exit Fullscreen
       </v-btn>
@@ -91,7 +102,7 @@ defineEmits<{
     </div>
 
     <div class="text-caption text-grey-lighten-1 mt-4">
-      In Windowed mode, use <strong>Alt + `</strong> for Escape
+       Alt+P for Menu in Fullscreen | Alt + ` for Escape in Windowed
     </div>
   </div>
 </template>
@@ -102,32 +113,27 @@ defineEmits<{
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 100;
+  z-index: 1000;
   width: auto;
   min-width: 600px;
+  pointer-events: none; /* Let clicks pass through when panel is up */
 }
 
-.pro-panel-trigger {
-  height: 5px;
-  width: 100%;
-  background: transparent;
+.panel-active {
+  pointer-events: auto !important;
 }
 
 .pro-panel-content {
-  background: rgba(20, 20, 20, 0.85);
-  backdrop-filter: blur(10px);
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-top: none;
-  transform: translateY(-90%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  transform: translateY(-100%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
 }
 
-.pro-panel-container:hover .pro-panel-content {
-  transform: translateY(0);
-}
-
-.pro-panel-content:hover {
-  transform: translateY(0);
+.panel-active .pro-panel-content {
+  transform: translateY(0) !important;
 }
 </style>
