@@ -40,11 +40,14 @@ const isCaptured = ref(false)
 const {
   startCapture,
   stopCapture,
+  toggleFullscreen,
   handleMouseMove,
   handleMouseDown,
   handleMouseUp,
   handleWheel,
-  handleContextMenu
+  handleContextMenu,
+  isFullscreen,
+  sendCtrlAltDel
 } = usePlayerInput(videoRef, isCaptured, sendHIDMessage, emit, connectHID)
 
 // === Watchers ===
@@ -61,7 +64,11 @@ defineExpose({ startCapture, stopCapture })
     <WebRTCCaptureOverlay 
       :is-hid-connected="isHidConnected"
       :is-captured="isCaptured"
+      :is-fullscreen="isFullscreen"
       @start-capture="startCapture"
+      @stop-capture="stopCapture"
+      @toggle-fullscreen="toggleFullscreen"
+      @send-ctrl-alt-del="sendCtrlAltDel"
     />
 
     <!-- Video Element -->

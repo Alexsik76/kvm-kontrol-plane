@@ -1,9 +1,8 @@
 import { Ref, onMounted, onBeforeUnmount } from "vue";
-import {
-  createKeyboardEventMessage,
-  createMouseEventMessage,
-  resetKeyboardState,
-} from "../utils/hid";
+import { resetKeyboardState } from "../utils/hid";
+import { useFullscreen } from "./useFullscreen";
+import { useMouseInput } from "./useMouseInput";
+import { useKeyboardInput } from "./useKeyboardInput";
 
 export function usePlayerInput(
   videoRef: Ref<HTMLVideoElement | null>,
@@ -12,161 +11,31 @@ export function usePlayerInput(
   emit: (e: "capture-change", captured: boolean) => void,
   connectHID?: () => void,
 ) {
-  let accX = 0;
-  let accY = 0;
-  let lastButtons = 0;
+  const {
+    isFullscreen,
+    toggleFullscreen,
+    lockKeyboard,
+    unlockKeyboard,
+    handleFullscreenChange: _handleFullscreenChange,
+  } = useFullscreen(videoRef);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (!isCaptured.value) return;
+  const {
+    handleMouseMove,
+    handleMouseDown,
+    handleMouseUp,
+    handleWheel,
+    startMouseLoop,
+    stopMouseLoop,
+  } = useMouseInput(videoRef, isCaptured, sendHIDMessage);
 
-    // Remote Escape via Alt + Backtick (~)
-    if (e.code === "Backquote" && e.altKey) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Create a fake event object to trick our HID utility
-      // or manually send the Escape code
-      const msg = createKeyboardEventMessage(
-        {
-          code: "Escape",
-          key: "Escape",
-          altKey: false,
-          ctrlKey: e.ctrlKey,
-          shiftKey: e.shiftKey,
-          metaKey: e.metaKey,
-        } as KeyboardEvent,
-        true,
-      );
-
-      if (msg) sendHIDMessage(msg);
-      return;
-    }
-
-    // Regular Escape - let the browser handle it (exit capture)
-    if (e.code === "Escape") {
-      return;
-    }
-
-    // Rest of your key handling logic...
-    if (["F5", "F12"].includes(e.code)) return;
-
-    e.preventDefault();
-    const msg = createKeyboardEventMessage(e, true);
-    if (msg) sendHIDMessage(msg);
-  };
-
-  const handleKeyUp = (e: KeyboardEvent) => {
-    if (!isCaptured.value) return;
-
-    if (e.code === "Backquote" && e.altKey) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const msg = createKeyboardEventMessage(
-        {
-          code: "Escape",
-          key: "Escape",
-          altKey: false,
-        } as KeyboardEvent,
-        false,
-      );
-
-      if (msg) sendHIDMessage(msg);
-      return;
-    }
-
-    if (e.code === "Escape") return;
-
-    // Rest of your keyup logic...
-    e.preventDefault();
-    const msg = createKeyboardEventMessage(e, false);
-    if (msg) sendHIDMessage(msg);
-  };
-
-  let accWheel = 0;
-  let rafId: number | null = null;
-
-  const flushMovement = () => {
-    if (Math.abs(accX) >= 1 || Math.abs(accY) >= 1 || accWheel !== 0) {
-      // HID coordinate delta is 8-bit signed: [-127, 127]
-      const finalX = Math.max(-127, Math.min(127, Math.round(accX)));
-      const finalY = Math.max(-127, Math.min(127, Math.round(accY)));
-      const finalWheel = accWheel;
-
-      const msg = createMouseEventMessage(lastButtons, finalX, finalY, finalWheel);
-      sendHIDMessage(msg);
-      
-      // ONLY subtract what we actually sent to the backend
-      accX -= finalX;
-      accY -= finalY;
-      accWheel = 0;
-    }
-    rafId = requestAnimationFrame(flushMovement);
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isCaptured.value) return;
-    
-    // We don't preventDefault on mousemove as it's not strictly needed for HID
-    // and can sometimes cause performance issues in older browsers
-
-    if (e.movementX === 0 && e.movementY === 0) return;
-
-    const video = videoRef.value;
-    let scaleX = 1;
-    let scaleY = 1;
-
-    if (video && video.clientWidth > 0 && video.clientHeight > 0) {
-      scaleX = video.videoWidth / video.clientWidth;
-      scaleY = video.videoHeight / video.clientHeight;
-    }
-
-    const sensitivity = 1.5;
-    accX += e.movementX * scaleX * sensitivity;
-    accY += e.movementY * scaleY * sensitivity;
-    lastButtons = e.buttons;
-    
-    // Movement is now flushed via requestAnimationFrame
-  };
-
-  const handleMouseDown = (e: MouseEvent) => {
-    if (!isCaptured.value) return;
-    e.preventDefault();
-
-    if (document.pointerLockElement !== videoRef.value) {
-      try {
-        videoRef.value?.requestPointerLock();
-      } catch (err) {}
-    }
-
-    lastButtons = e.buttons;
-    const msg = createMouseEventMessage(lastButtons, 0, 0, 0);
-    sendHIDMessage(msg);
-  };
-
-  const handleMouseUp = (e: MouseEvent) => {
-    if (!isCaptured.value) return;
-    e.preventDefault();
-    lastButtons = e.buttons;
-    const msg = createMouseEventMessage(lastButtons, 0, 0, 0);
-    sendHIDMessage(msg);
-  };
-
-  const handleWheel = (e: WheelEvent) => {
-    if (!isCaptured.value) return;
-    e.preventDefault();
-    accWheel += e.deltaY > 0 ? -1 : 1;
-    lastButtons = e.buttons;
-  };
-
-  const handleContextMenu = (e: Event) => {
-    e.preventDefault();
-  };
+  const { handleKeyDown, handleKeyUp, sendCtrlAltDel } = useKeyboardInput(
+    isCaptured,
+    isFullscreen,
+    sendHIDMessage,
+  );
 
   const startCapture = () => {
-    if (connectHID) {
-      connectHID();
-    }
+    if (connectHID) connectHID();
 
     isCaptured.value = true;
     emit("capture-change", true);
@@ -178,13 +47,11 @@ export function usePlayerInput(
       console.error("Pointer Lock failed:", err);
     }
 
+    startMouseLoop();
+    lockKeyboard(true);
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    
-    // Start movement flushing loop
-    if (!rafId) {
-      rafId = requestAnimationFrame(flushMovement);
-    }
   };
 
   const stopCapture = () => {
@@ -192,16 +59,8 @@ export function usePlayerInput(
     isCaptured.value = false;
     emit("capture-change", false);
 
-    // Stop movement flushing loop
-    if (rafId) {
-      cancelAnimationFrame(rafId);
-      rafId = null;
-    }
-
-    // Reset accumulators
-    accX = 0;
-    accY = 0;
-    accWheel = 0;
+    stopMouseLoop();
+    unlockKeyboard();
 
     sendHIDMessage(resetKeyboardState());
     sendHIDMessage({
@@ -213,22 +72,11 @@ export function usePlayerInput(
       document.exitPointerLock();
     }
 
-    if (
-      "keyboard" in navigator &&
-      (navigator as any).keyboard &&
-      (navigator as any).keyboard.unlock
-    ) {
-      (navigator as any).keyboard.unlock();
-    }
-
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
   };
 
   const handlePointerLockChange = () => {
-    // If the browser natively exited pointer lock (usually via Esc),
-    // and we are still "captured", we should drop capture immediately.
-    // Otherwise the user has to press Esc again to actually fire our stopCapture.
     if (!document.pointerLockElement && isCaptured.value) {
       stopCapture();
     }
@@ -238,13 +86,19 @@ export function usePlayerInput(
     stopCapture();
   };
 
+  const onFullscreenChange = () => {
+    _handleFullscreenChange(isCaptured.value);
+  };
+
   onMounted(() => {
     document.addEventListener("pointerlockchange", handlePointerLockChange);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
     window.addEventListener("blur", handleWindowBlur);
   });
 
   onBeforeUnmount(() => {
     document.removeEventListener("pointerlockchange", handlePointerLockChange);
+    document.removeEventListener("fullscreenchange", onFullscreenChange);
     window.removeEventListener("blur", handleWindowBlur);
     stopCapture();
   });
@@ -252,10 +106,13 @@ export function usePlayerInput(
   return {
     startCapture,
     stopCapture,
+    toggleFullscreen,
     handleMouseMove,
     handleMouseDown,
     handleMouseUp,
     handleWheel,
-    handleContextMenu,
+    handleContextMenu: (e: Event) => e.preventDefault(),
+    isFullscreen,
+    sendCtrlAltDel,
   };
 }

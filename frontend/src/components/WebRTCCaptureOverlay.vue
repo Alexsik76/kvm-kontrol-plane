@@ -2,25 +2,72 @@
 defineProps<{
   isHidConnected: boolean
   isCaptured: boolean
+  isFullscreen: boolean
 }>()
 
 defineEmits<{
   (e: 'start-capture'): void
+  (e: 'stop-capture'): void
+  (e: 'toggle-fullscreen'): void
+  (e: 'send-ctrl-alt-del'): void
 }>()
 </script>
 
 <template>
-  <!-- Top Right Badge -->
   <div 
     v-if="isHidConnected" 
     class="position-absolute text-caption px-3 py-1 rounded bg-black border"
     :class="isCaptured ? 'border-success text-success' : 'border-grey text-grey'"
-    style="top: 8px; right: 8px; z-index: 20; opacity: 0.9;"
+    style="top: 8px; right: 8px; z-index: 20; opacity: 0.9; transition: opacity 0.3s;"
+    :style="{ opacity: isFullscreen && isCaptured ? 0 : 0.9 }"
   >
     <v-icon icon="mdi-keyboard" size="small" class="mr-1"></v-icon>
     <v-icon icon="mdi-mouse" size="small" class="mr-2"></v-icon>
     <span v-if="isCaptured" class="font-weight-bold">HID Capture Active — ESC to Unlock</span>
     <span v-else>HID Ready</span>
+  </div>
+
+  <!-- Professional Mode: Top Slide-Down Control Panel -->
+  <div
+    v-if="isFullscreen && isCaptured"
+    class="pro-panel-container"
+  >
+    <div class="pro-panel-trigger"></div>
+    <div class="pro-panel-content d-flex align-center px-4 py-2 rounded-b-lg">
+      <div class="d-flex align-center mr-4">
+        <v-icon icon="mdi-remote-desktop" color="success" size="small" class="mr-2"></v-icon>
+        <span class="text-caption font-weight-bold text-white">PROFESSIONAL KVM MODE</span>
+      </div>
+      
+      <v-divider vertical class="mx-2"></v-divider>
+      
+      <v-btn 
+        variant="tonal" 
+        size="small" 
+        color="warning" 
+        class="mx-1" 
+        prepend-icon="mdi-keyboard-variant"
+        @click="$emit('send-ctrl-alt-del')"
+      >
+        Ctrl+Alt+Del
+      </v-btn>
+
+      <v-spacer></v-spacer>
+
+      <div class="text-caption text-grey-lighten-1 mr-4">
+        Esc goes to Remote. Hold Esc to Exit.
+      </div>
+
+      <v-btn 
+        variant="flat" 
+        size="small" 
+        color="error" 
+        prepend-icon="mdi-fullscreen-exit"
+        @click="$emit('toggle-fullscreen')"
+      >
+        Exit Fullscreen
+      </v-btn>
+    </div>
   </div>
 
   <!-- Center Click to Control -->
@@ -33,6 +80,54 @@ defineEmits<{
     <v-icon icon="mdi-cursor-default-click" size="64" color="white" class="mb-4"></v-icon>
     <div class="text-h5 text-white font-weight-bold">Click to Control</div>
     <div class="text-body-1 text-grey-lighten-2 mt-2">Mouse will be locked. Press <strong>ESC</strong> to exit</div>
-    <div class="text-caption text-grey-lighten-1 mt-1">Press <strong>Alt+` (Backquote)</strong> to send Escape to remote computer</div>
+    
+    <div class="d-flex mt-4">
+      <v-btn color="primary" class="mr-3" @click.stop="$emit('start-capture')">
+        Windowed Mode
+      </v-btn>
+      <v-btn color="success" variant="outlined" prepend-icon="mdi-fullscreen" @click.stop="$emit('toggle-fullscreen'); $emit('start-capture')">
+        Professional Mode (Fullscreen)
+      </v-btn>
+    </div>
+
+    <div class="text-caption text-grey-lighten-1 mt-4">
+      In Windowed mode, use <strong>Alt + `</strong> for Escape
+    </div>
   </div>
 </template>
+
+<style scoped>
+.pro-panel-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: auto;
+  min-width: 600px;
+}
+
+.pro-panel-trigger {
+  height: 5px;
+  width: 100%;
+  background: transparent;
+}
+
+.pro-panel-content {
+  background: rgba(20, 20, 20, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: none;
+  transform: translateY(-90%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.pro-panel-container:hover .pro-panel-content {
+  transform: translateY(0);
+}
+
+.pro-panel-content:hover {
+  transform: translateY(0);
+}
+</style>

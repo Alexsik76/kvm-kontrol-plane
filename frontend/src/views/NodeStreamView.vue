@@ -105,7 +105,7 @@ onMounted(() => {
                 </v-alert>
 
                 <p class="text-body-2 text-medium-emphasis">
-                  Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>ESC</b> to release focus and unlock the mouse. To send <b>Escape</b> to the remote computer, use <b>Alt+ESC</b>.
+                  Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>ESC</b> to release focus and unlock the mouse. For a full immersive experience, use <b>Professional Mode</b> (Fullscreen), where <b>ESC</b> works natively. In windowed mode, use <b>Alt+`</b> to send Escape.
                 </p>
               </v-card-text>
             </v-card>
