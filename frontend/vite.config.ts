@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
-
+import { VitePWA } from 'vite-plugin-pwa'
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -18,6 +18,32 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       vue(),
       vuetify({ autoImport: true }),
+      VitePWA({
+      registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true
+      },
+      manifest: {
+        name: 'IP-KVM Control',
+        short_name: 'KVM',
+        description: 'Hardware IP-KVM Remote Control',
+        theme_color: '#000000',
+        background_color: '#000000',
+        display: 'fullscreen',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          }
+        ]
+      }
+    })
     ],
     define: {
       'import.meta.env.VITE_API_BASE_URL': apiBaseUrl
