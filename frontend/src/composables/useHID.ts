@@ -53,7 +53,7 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
 };
   }
 
-  const MSG_INTERVAL_MS = 15;
+  const MSG_INTERVAL_MS = 10;
   const messageQueue: any[] = [];
   let isSendingQueue = false;
 
@@ -75,6 +75,23 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
 
   const sendHIDMessage = (msg: any) => {
     if (wsConnection.value?.readyState !== WebSocket.OPEN) return;
+
+    // Movement coalescing:
+    // If the latest message in the queue is a mouse movement and has the same button state,
+    // we can merge this new movement into it instead of creating a new queue entry.
+    if (msg.type === "mouse" && messageQueue.length > 0) {
+      const lastMsg = messageQueue[messageQueue.length - 1];
+      if (lastMsg.type === "mouse" && lastMsg.data.buttons === msg.data.buttons) {
+        lastMsg.data.x += msg.data.x;
+        lastMsg.data.y += msg.data.y;
+        lastMsg.data.wheel += msg.data.wheel;
+        
+        // Constrain to int8 range [-127, 127]
+        lastMsg.data.x = Math.max(-127, Math.min(127, lastMsg.data.x));
+        lastMsg.data.y = Math.max(-127, Math.min(127, lastMsg.data.y));
+        return;
+      }
+    }
 
     if (msg.type === "mouse" && msg.data.buttons === 0) {
       // For pure mouse movement without clicks, we can drop them if sending too fast or busy

@@ -83,15 +83,33 @@ export function usePlayerInput(
     if (msg) sendHIDMessage(msg);
   };
 
+  let accWheel = 0;
+  let rafId: number | null = null;
+
+  const flushMovement = () => {
+    if (Math.abs(accX) >= 1 || Math.abs(accY) >= 1 || accWheel !== 0) {
+      const finalX = Math.round(accX);
+      const finalY = Math.round(accY);
+      const finalWheel = accWheel;
+
+      const msg = createMouseEventMessage(lastButtons, finalX, finalY, finalWheel);
+      sendHIDMessage(msg);
+      
+      accX -= finalX;
+      accY -= finalY;
+      accWheel = 0;
+    }
+    rafId = requestAnimationFrame(flushMovement);
+  };
+
   const handleMouseMove = (e: MouseEvent) => {
     if (!isCaptured.value) return;
-    e.preventDefault();
+    
+    // We don't preventDefault on mousemove as it's not strictly needed for HID
+    // and can sometimes cause performance issues in older browsers
 
     if (e.movementX === 0 && e.movementY === 0) return;
 
-    // Dynamic scaling:
-    // Browser movementX/Y is in CSS pixels of the video element.
-    // We need to scale it to the actual video resolution to feel 1:1.
     const video = videoRef.value;
     let scaleX = 1;
     let scaleY = 1;
@@ -101,23 +119,12 @@ export function usePlayerInput(
       scaleY = video.videoHeight / video.clientHeight;
     }
 
-    // Apply scaling + additional sensitivity multiplier (1.5x)
     const sensitivity = 1.5;
     accX += e.movementX * scaleX * sensitivity;
     accY += e.movementY * scaleY * sensitivity;
     lastButtons = e.buttons;
-
-    if (Math.abs(accX) >= 1 || Math.abs(accY) >= 1) {
-      const finalX = Math.round(accX);
-      const finalY = Math.round(accY);
-
-      if (finalX !== 0 || finalY !== 0) {
-        const msg = createMouseEventMessage(lastButtons, finalX, finalY, 0);
-        sendHIDMessage(msg);
-        accX -= finalX;
-        accY -= finalY;
-      }
-    }
+    
+    // Movement is now flushed via requestAnimationFrame
   };
 
   const handleMouseDown = (e: MouseEvent) => {
@@ -146,9 +153,8 @@ export function usePlayerInput(
   const handleWheel = (e: WheelEvent) => {
     if (!isCaptured.value) return;
     e.preventDefault();
-    const wheelVal = e.deltaY > 0 ? -1 : 1;
-    const msg = createMouseEventMessage(e.buttons, 0, 0, wheelVal);
-    sendHIDMessage(msg);
+    accWheel += e.deltaY > 0 ? -1 : 1;
+    lastButtons = e.buttons;
   };
 
   const handleContextMenu = (e: Event) => {
@@ -156,7 +162,6 @@ export function usePlayerInput(
   };
 
   const startCapture = () => {
-    // If there's a connection logic injected, reconnect/connect HID when stream is clicked
     if (connectHID) {
       connectHID();
     }
@@ -173,6 +178,11 @@ export function usePlayerInput(
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
+    
+    // Start movement flushing loop
+    if (!rafId) {
+      rafId = requestAnimationFrame(flushMovement);
+    }
   };
 
   const stopCapture = () => {
@@ -180,7 +190,17 @@ export function usePlayerInput(
     isCaptured.value = false;
     emit("capture-change", false);
 
-    // Release all keys and buttons to prevent them from getting stuck
+    // Stop movement flushing loop
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    // Reset accumulators
+    accX = 0;
+    accY = 0;
+    accWheel = 0;
+
     sendHIDMessage(resetKeyboardState());
     sendHIDMessage({
       type: "mouse",
