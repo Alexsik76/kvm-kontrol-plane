@@ -71,9 +71,10 @@ const handleLogin = async () => {
         <v-form :disabled="loading">
           <v-text-field
             v-model="username"
-            label="Username"
             id="username"
             name="username"
+            autocomplete="username"
+            label="Username"
             prepend-inner-icon="mdi-account"
             variant="outlined"
             class="mb-2"
