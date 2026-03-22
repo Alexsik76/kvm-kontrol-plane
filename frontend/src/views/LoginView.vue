@@ -71,8 +71,6 @@ const handleLogin = async () => {
         <v-form :disabled="loading">
           <v-text-field
             v-model="username"
-            id="username"
-            aria-label="Username"
             name="username"
             autocomplete="username"
             label="Username"
@@ -86,8 +84,6 @@ const handleLogin = async () => {
 
           <v-text-field
             v-model="password"
-            id="password"
-            aria-label="Password"
             name="password"
             autocomplete="current-password"
             label="Password"
