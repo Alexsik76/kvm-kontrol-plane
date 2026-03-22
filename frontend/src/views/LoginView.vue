@@ -72,6 +72,8 @@ const handleLogin = async () => {
           <v-text-field
             v-model="username"
             label="Username"
+            id="username"
+            name="username"
             prepend-inner-icon="mdi-account"
             variant="outlined"
             class="mb-2"
@@ -82,6 +84,9 @@ const handleLogin = async () => {
 
           <v-text-field
             v-model="password"
+            id="password"
+            name="password"
+            autocomplete="current-password"
             label="Password"
             type="password"
             prepend-inner-icon="mdi-lock"
