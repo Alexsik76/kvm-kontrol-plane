@@ -36,12 +36,11 @@ defineEmits<{
     <h3 class="text-h6 font-weight-medium text-white">{{ streamStatus }}</h3>
     <p v-if="connectionError" class="text-body-1 text-error mt-2">{{ connectionError }}</p>
     
-    <div v-if="connectionError" class="d-flex mt-6">
+    <div v-if="connectionError" class="d-flex mt-6" style="gap: 16px;">
       <v-btn
         color="primary"
         variant="flat"
         prepend-icon="mdi-reload"
-        class="mr-4"
         @click="$emit('retry')"
       >
         Retry Connection
