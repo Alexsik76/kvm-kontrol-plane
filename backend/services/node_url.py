@@ -48,11 +48,6 @@ def get_node_control_url(node: KvmNode) -> str:
     """Build the HTTP URL for the RPi control server (hid_server).
 
     Used for non-WebSocket control actions like /wake.
-
-    Examples
-    --------
-    Tunnel configured  → https://pi4.lab.vn.ua
-    No tunnel          → http://10.8.0.10:8080
     """
     base = _effective_base_url(node)
     if base:

@@ -144,7 +144,7 @@ async def wake_node(
 
     This allows waking up a sleeping host even if the WebSocket is not connected.
     """
-    url = f"{get_node_control_url(node)}/wake"
+    url = f"{get_node_control_url(node)}/ws/wake"
 
     async with httpx.AsyncClient(timeout=settings.NODE_HTTP_TIMEOUT_SECONDS) as client:
         try:
