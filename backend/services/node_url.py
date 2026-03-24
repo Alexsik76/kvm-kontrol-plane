@@ -51,13 +51,13 @@ def get_node_control_url(node: KvmNode) -> str:
 
     Examples
     --------
-    Tunnel configured  → https://pi4.lab.vn.ua/control
-    No tunnel          → http://10.8.0.10:8080/control
+    Tunnel configured  → https://pi4.lab.vn.ua
+    No tunnel          → http://10.8.0.10:8080
     """
     base = _effective_base_url(node)
     if base:
-        return f"{base}/control"
-    return f"http://{node.internal_ip}:{node.ws_port}/control"
+        return f"{base}"
+    return f"http://{node.internal_ip}:{node.ws_port}"
 
 
 def get_node_ws_url(node: KvmNode) -> str:
