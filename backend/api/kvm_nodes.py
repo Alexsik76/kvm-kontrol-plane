@@ -138,7 +138,7 @@ async def get_node_status(
     summary="Send a wake-up signal (Left Shift) to the host via USB HID.",
 )
 async def wake_node(
-    node: Annotated[KvmNode, Depends(require_node_access(can_control=True))],
+    node: Annotated[KvmNode, Depends(require_node_access(require_control=True))],
 ) -> dict:
     """Forward a wake-up request to the node's control server (hid_server).
 
