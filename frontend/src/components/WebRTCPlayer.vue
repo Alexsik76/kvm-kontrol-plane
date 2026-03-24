@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, toRef } from 'vue'
+import { ref, watch, toRef, onMounted, onBeforeUnmount } from 'vue'
 import { useWebRTC } from '../composables/useWebRTC'
 import { useHID } from '../composables/useHID'
 import { usePlayerInput } from '../composables/usePlayerInput'
@@ -29,7 +29,8 @@ const {
 const {
   isHidConnected,
   sendHIDMessage,
-  connectHID
+  connectHID,
+  wakeHost
 } = useHID(nodeId, () => {
   // Reset local state when backend NACKs a write failure
   sendHIDMessage(resetKeyboardState())
@@ -54,6 +55,22 @@ const {
 // === Watchers ===
 watch([streamStatus, connectionError], ([status, error]) => {
   emit('status-changed', { status: status as string, error: (error as string) || '' })
+})
+
+// === Global Keydown for Wake ===
+const handleGlobalKeyDown = (e: KeyboardEvent) => {
+  if (connectionError.value && !loading.value) {
+    console.log('Key pressed during connection error, sending wake signal...')
+    wakeHost()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleGlobalKeyDown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleGlobalKeyDown)
 })
 
 defineExpose({ startCapture, stopCapture })
@@ -101,6 +118,7 @@ defineExpose({ startCapture, stopCapture })
       :connection-error="connectionError || null"
       :stream-status="streamStatus"
       @retry="startStream"
+      @wake="wakeHost"
     />
   </v-card>
 </template>

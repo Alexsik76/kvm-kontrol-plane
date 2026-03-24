@@ -11,18 +11,22 @@ Endpoints
     PUT    /api/v1/nodes/{id}      — partial update (superuser only)
     DELETE /api/v1/nodes/{id}      — remove a node (superuser only)
     GET    /api/v1/nodes/{id}/status — current health status
+    POST   /api/v1/nodes/{id}/wake   — send HID wake signal
 """
 
 import uuid
 from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+import httpx
 
+from core.config import settings
 from core.dependencies import CurrentUser, SessionDep, require_node_access
 from models.kvm_node import KvmNode
 from models.user import User
 from schemas.kvm_node import KvmNodeCreate, KvmNodeRead, KvmNodeUpdate, NodeStatusRead
 from services import node_manager
+from services.node_url import get_node_control_url
 
 router = APIRouter(prefix="/nodes", tags=["kvm-nodes"])
 
@@ -127,3 +131,39 @@ async def get_node_status(
 ) -> NodeStatusRead:
     """Return the most recent status recorded by the health poller."""
     return NodeStatusRead.model_validate(node)
+
+
+@router.post(
+    "/{node_id}/wake",
+    summary="Send a wake-up signal (Left Shift) to the host via USB HID.",
+)
+async def wake_node(
+    node: Annotated[KvmNode, Depends(require_node_access(can_control=True))],
+) -> dict:
+    """Forward a wake-up request to the node's control server (hid_server).
+
+    This allows waking up a sleeping host even if the WebSocket is not connected.
+    """
+    url = f"{get_node_control_url(node)}/wake"
+
+    async with httpx.AsyncClient(timeout=settings.NODE_HTTP_TIMEOUT_SECONDS) as client:
+        try:
+            # Note: hid_server (Go) expects POST /wake
+            response = await client.post(url)
+            response.raise_for_status()
+            return response.json()
+        except httpx.RequestError:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Could not reach the KVM node's control server.",
+            )
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"KVM node control error: HTTP {exc.response.status_code}",
+            )
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Unexpected error sending wake signal",
+            )

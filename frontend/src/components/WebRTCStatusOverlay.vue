@@ -7,6 +7,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'retry'): void
+  (e: 'wake'): void
 }>()
 </script>
 
@@ -35,15 +36,25 @@ defineEmits<{
     <h3 class="text-h6 font-weight-medium text-white">{{ streamStatus }}</h3>
     <p v-if="connectionError" class="text-body-1 text-error mt-2">{{ connectionError }}</p>
     
-    <v-btn
-      v-if="connectionError"
-      color="primary"
-      variant="flat"
-      prepend-icon="mdi-reload"
-      class="mt-6"
-      @click="$emit('retry')"
-    >
-      Retry Connection
-    </v-btn>
+    <div v-if="connectionError" class="d-flex mt-6">
+      <v-btn
+        color="primary"
+        variant="flat"
+        prepend-icon="mdi-reload"
+        class="mr-4"
+        @click="$emit('retry')"
+      >
+        Retry Connection
+      </v-btn>
+
+      <v-btn
+        color="success"
+        variant="elevated"
+        prepend-icon="mdi-power-sleep"
+        @click="$emit('wake')"
+      >
+        Wake Host
+      </v-btn>
+    </div>
   </div>
 </template>

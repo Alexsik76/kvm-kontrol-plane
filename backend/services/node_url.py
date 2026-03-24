@@ -44,6 +44,22 @@ def get_node_http_url(node: KvmNode) -> str:
     return f"http://{node.internal_ip}:8889/{node.stream_name}/whep"
 
 
+def get_node_control_url(node: KvmNode) -> str:
+    """Build the HTTP URL for the RPi control server (hid_server).
+
+    Used for non-WebSocket control actions like /wake.
+
+    Examples
+    --------
+    Tunnel configured  → https://pi4.lab.vn.ua/control
+    No tunnel          → http://10.8.0.10:8080/control
+    """
+    base = _effective_base_url(node)
+    if base:
+        return f"{base}/control"
+    return f"http://{node.internal_ip}:{node.ws_port}/control"
+
+
 def get_node_ws_url(node: KvmNode) -> str:
     """Build the WSS/WS URL for the RPi WebSocket control server.
 

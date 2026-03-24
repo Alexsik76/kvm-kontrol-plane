@@ -122,9 +122,24 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
     }
   })
 
+  const wakeHost = async () => {
+    if (!nodeId.value) return
+    try {
+      await fetch(`/api/v1/nodes/${nodeId.value}/wake`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authStore.accessToken}`
+        }
+      })
+    } catch (err) {
+      console.error('Failed to send wake signal:', err)
+    }
+  }
+
   return {
     isHidConnected,
     sendHIDMessage,
-    connectHID
+    connectHID,
+    wakeHost
   }
 }
