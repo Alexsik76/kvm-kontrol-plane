@@ -58,7 +58,7 @@ watch([streamStatus, connectionError], ([status, error]) => {
 })
 
 // === Global Keydown for Wake ===
-const handleGlobalKeyDown = (e: KeyboardEvent) => {
+const handleGlobalKeyDown = (_e: KeyboardEvent) => {
   if (connectionError.value && !loading.value) {
     console.log('Key pressed during connection error, sending wake signal...')
     wakeHost()
