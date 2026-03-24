@@ -73,6 +73,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleGlobalKeyDown)
 })
 
+
 defineExpose({ startCapture, stopCapture })
 </script>
 
