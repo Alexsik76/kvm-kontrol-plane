@@ -134,7 +134,7 @@ async def get_node_status(
 
 
 @router.post(
-    "/{node_id}/wake",
+    "/{node_id}/ws/wake",
     summary="Send a wake-up signal (Left Shift) to the host via USB HID.",
 )
 async def wake_node(

@@ -125,7 +125,7 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
   const wakeHost = async () => {
     if (!nodeId.value) return
     try {
-      await fetch(`/api/v1/nodes/${nodeId.value}/wake`, {
+      await fetch(`/api/v1/nodes/${nodeId.value}/ws/wake`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authStore.accessToken}`
