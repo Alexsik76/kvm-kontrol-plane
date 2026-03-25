@@ -61,13 +61,17 @@ async def signal_offer(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal error building node URL",
         )
-
-    async with httpx.AsyncClient(timeout=settings.NODE_HTTP_TIMEOUT_SECONDS) as client:
+    headers = {
+        "Content-Type": "application/sdp",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "*/*"
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             response = await client.post(
                 mediamtx_url,
                 content=offer.sdp,
-                headers={"Content-Type": "application/sdp"},
+                headers=headers,
             )
             response.raise_for_status()
             return SDPAnswer(sdp=response.text, type="answer")
