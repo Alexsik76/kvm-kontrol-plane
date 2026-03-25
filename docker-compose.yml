@@ -57,6 +57,9 @@ services:
     restart: unless-stopped
     environment:
       - VITE_API_BASE_URL=${KVM_API_TUNNEL_URL}
+      - VITE_TURN_URL=${EXTERNAL_PUBLIC_IP}
+      - VITE_TURN_USERNAME=${TURN_USERNAME}
+      - VITE_TURN_PASSWORD=${TURN_PASSWORD}
     ports:
       # Nginx listens on 80 internally, expose it on 3000 externally to not clash
       - "3000:80"
@@ -95,6 +98,27 @@ services:
       timeout: 5s
       retries: 5
 
+  turn:
+    image: coturn/coturn:latest
+    container_name: kvm_turn
+    restart: unless-stopped
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --min-port=50000
+      - --max-port=50050
+      - --user=${TURN_USERNAME}:${TURN_PASSWORD}
+      - --realm=lab.vn.ua
+      - --external-ip=${EXTERNAL_PUBLIC_IP}
+      - --no-tls
+      - --no-dtls
+    ports:
+      - "3478:3478/tcp"
+      - "3478:3478/udp"
+      - "50000-50050:50000-50050/udp"
+    networks:
+      - kvm_internal
 # ------------------------------------------------------------------------------
 # Named volumes
 # ------------------------------------------------------------------------------

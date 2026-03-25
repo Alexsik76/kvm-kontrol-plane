@@ -66,7 +66,10 @@ export function useWebRTC(nodeId: Ref<string>) {
 
     try {
       peerConnection.value = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: `turn:${import.meta.env.VITE_TURN_URL}:3478`, username: import.meta.env.VITE_TURN_USERNAME, credential: import.meta.env.VITE_TURN_PASSWORD }
+        ]
       })
 
       peerConnection.value.addTransceiver('video', { direction: 'recvonly' })
