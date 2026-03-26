@@ -30,16 +30,6 @@ export function useWebRTC(nodeId: Ref<string>) {
       peerConnection.value = new RTCPeerConnection({
         iceServers: [
           { urls: "stun:stun.relay.metered.ca:80" },
-          {
-            urls: [
-              "turn:global.relay.metered.ca:80",
-              "turn:global.relay.metered.ca:80?transport=tcp",
-              "turn:global.relay.metered.ca:443",
-              "turn:global.relay.metered.ca:443?transport=tcp"
-            ],
-            username: "764a7c65471d394d680f27c1",
-            credential: "72KO6XDmdWvv3D4F",
-          }
         ],
         iceTransportPolicy: 'all'
       })
