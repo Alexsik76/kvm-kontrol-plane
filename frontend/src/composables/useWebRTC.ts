@@ -67,13 +67,30 @@ export function useWebRTC(nodeId: Ref<string>) {
     try {
       peerConnection.value = new RTCPeerConnection({
         iceServers: [
-    {
-      urls: "turn:global.relay.metered.ca:80",
-      username: "764a7c65471d394d680f27c1",
-      credential: "72KO6XDmdWvv3D4F",
-    }
-  ],
-        iceTransportPolicy: 'relay'
+      {
+        urls: "stun:stun.relay.metered.ca:80",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:80",
+        username: "764a7c65471d394d680f27c1",
+        credential: "72KO6XDmdWvv3D4F",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:80?transport=tcp",
+        username: "764a7c65471d394d680f27c1",
+        credential: "72KO6XDmdWvv3D4F",
+      },
+      {
+        urls: "turn:global.relay.metered.ca:443",
+        username: "764a7c65471d394d680f27c1",
+        credential: "72KO6XDmdWvv3D4F",
+      },
+      {
+        urls: "turns:global.relay.metered.ca:443?transport=tcp",
+        username: "764a7c65471d394d680f27c1",
+        credential: "72KO6XDmdWvv3D4F",
+      },
+  ]
       })
 
       peerConnection.value.addTransceiver('video', { direction: 'recvonly' })
