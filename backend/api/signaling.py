@@ -1,8 +1,8 @@
 """
 api/signaling.py
 
-WebRTC signaling router — relays SDP offers and ICE candidates.
-Uses a simple in-memory map to track WHEP sessions for Trickle ICE.
+WebRTC signaling router — relays SDP offers and ICE candidates from the browser 
+to the MediaMTX instance running on the Raspberry Pi.
 """
 
 import logging
@@ -22,10 +22,6 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["signaling"])
 
-# In-memory store for WHEP session URLs: {node_id: last_session_url}
-# Note: In multi-user production, use Redis or session-id from frontend.
-_session_storage = {}
-
 @router.post(
     "/nodes/{node_id}/signal/offer",
     response_model=SDPAnswer,
@@ -44,30 +40,33 @@ async def signal_offer(
             detail="Internal error building node URL",
         )
 
-    async with httpx.AsyncClient(timeout=settings.NODE_HTTP_TIMEOUT_SECONDS) as client:
+    # Use a longer timeout for the initial handshake
+    async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.post(
                 mediamtx_url,
                 content=offer.sdp,
                 headers={"Content-Type": "application/sdp"},
             )
-            response.raise_for_status()
             
-            # Store the session URL for subsequent ICE candidates
+            if response.status_code not in (200, 201):
+                logger.error("MediaMTX returned error %s for URL %s: %s", response.status_code, mediamtx_url, response.text)
+                raise HTTPException(status_code=502, detail="Streaming server rejected the offer")
+
+            # Extract session URL from Location header (critical for Trickle ICE)
             session_path = response.headers.get("Location")
+            session_url = None
             if session_path:
-                parsed_base = urlparse(mediamtx_url)
-                full_session_url = f"{parsed_base.scheme}://{parsed_base.netloc}{session_path}"
-                _session_storage[node.id] = full_session_url
-                logger.debug("Stored session URL for node %s: %s", node.id, full_session_url)
+                if session_path.startswith("http"):
+                    session_url = session_path
+                else:
+                    parsed_base = urlparse(mediamtx_url)
+                    session_url = f"{parsed_base.scheme}://{parsed_base.netloc}{session_path}"
             
-            return SDPAnswer(sdp=response.text, type="answer")
-        except Exception as exc:
-            logger.error("Signaling offer failed: %s", exc)
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Could not reach the KVM node's streaming server.",
-            )
+            return SDPAnswer(sdp=response.text, type="answer", session_url=session_url)
+        except httpx.RequestError as exc:
+            logger.error("Network error connecting to node %s at %s: %s", node.id, mediamtx_url, exc)
+            raise HTTPException(status_code=502, detail="KVM Node unreachable via tunnel")
 
 @router.post(
     "/nodes/{node_id}/signal/ice",
@@ -78,11 +77,13 @@ async def signal_ice(
     candidate: ICECandidate,
     node: Annotated[KvmNode, Depends(require_node_access())],
 ) -> None:
-    """Forward a trickle ICE candidate using the stored session URL."""
-    target_url = _session_storage.get(node.id) or get_node_http_url(node)
+    """Forward a trickle ICE candidate to the specific WHEP session URL."""
+    # Front-end provides the session_url it received from the offer
+    target_url = candidate.session_url or get_node_http_url(node)
     
     async with httpx.AsyncClient(timeout=2.0) as client:
         try:
+            # MediaMTX WHEP implementation uses PATCH for ICE candidates
             await client.patch(
                 target_url,
                 content=candidate.candidate,
