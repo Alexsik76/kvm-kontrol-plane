@@ -104,21 +104,8 @@ services:
     container_name: kvm_turn
     restart: unless-stopped
     network_mode: "host"
-    environment:
-      - DETECT_EXTERNAL_IP=yes
-    command:
-      - turnserver
-      - -n
-      - --log-file=stdout
-      - --listening-port=3478
-      - --min-port=50000
-      - --max-port=50050
-      - --user=${TURN_USERNAME}:${TURN_PASSWORD}
-      - --realm=lab.vn.ua
-      - --relay-ip=0.0.0.0
-      - --lt-cred-mech
-      - --no-tls
-      - --no-dtls
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
 # ------------------------------------------------------------------------------
 # Named volumes
 # ------------------------------------------------------------------------------
