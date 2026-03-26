@@ -11,12 +11,12 @@ def _effective_base_url(node: KvmNode) -> str | None:
 
 def get_node_http_url(node: KvmNode) -> str:
     """Build the base URL for MediaMTX WHEP.
-    In MediaMTX v1.x, WHEP is available directly at the path name.
+    In MediaMTX v1.12+, WHEP is available at /path/whep.
     """
     base = _effective_base_url(node)
     if base:
-        return f"{base}/{node.stream_name}"
-    return f"http://{node.internal_ip}:8889/{node.stream_name}"
+        return f"{base}/{node.stream_name}/whep"
+    return f"http://{node.internal_ip}:8889/{node.stream_name}/whep"
 
 def get_node_control_url(node: KvmNode) -> str:
     base = _effective_base_url(node)
