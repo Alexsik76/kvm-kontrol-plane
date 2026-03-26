@@ -117,8 +117,8 @@ services:
       - --user=${TURN_USERNAME}:${TURN_PASSWORD}
       - --realm=lab.vn.ua
       - --external-ip=$$(detect-external-ip)
-      - --relay-ip=$$(detect-external-ip)
-      - --lt-cred-mech
+      - --relay-ip=0.0.0.0
+      - --listening-ip=0.0.0.0
       - --no-tls
       - --no-dtls
 # ------------------------------------------------------------------------------
