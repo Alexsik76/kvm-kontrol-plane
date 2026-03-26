@@ -111,7 +111,7 @@ services:
       --max-port=50050 
       --user=${TURN_USERNAME}:${TURN_PASSWORD} 
       --realm=lab.vn.ua 
-      --external-ip=${EXTERNAL_PUBLIC_IP} 
+      --external-ip=${EXTERNAL_PUBLIC_IP}/172.21.0.2
       --relay-ip=172.21.0.2 
       --listening-ip=0.0.0.0 
       --lt-cred-mech 
