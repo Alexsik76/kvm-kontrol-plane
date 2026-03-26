@@ -69,8 +69,9 @@ class NodeHealthService:
             ) as client:
                 # Use OPTIONS as a lightweight ping that asks the server what methods are allowed
                 response = await client.options(url)
-                # MediaMTX might return 200, 204 or 405 Method Not Allowed. Any response means alive.
-                if response.status_code in (200, 204, 400, 401, 403, 404, 405):
+                # MediaMTX might return 200, 204 or 405 Method Not Allowed.
+                # A 404 means the stream path or WHEP itself is missing.
+                if response.status_code in (200, 204, 401, 403, 405):
                     is_online = True
         except httpx.RequestError:
             pass  # Node is offline/unreachable
