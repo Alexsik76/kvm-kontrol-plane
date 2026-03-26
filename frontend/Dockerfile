@@ -23,15 +23,6 @@ COPY . .
 # Build the SPA (creates /app/dist)
 # Our vite.config.ts is configured to embed the string "__VITE_API_BASE_URL_PLACEHOLDER__" 
 # during this build process.
-ARG VITE_API_BASE_URL
-ARG VITE_TURN_URL
-ARG VITE_TURN_USERNAME
-ARG VITE_TURN_PASSWORD
-
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_TURN_URL=$VITE_TURN_URL
-ENV VITE_TURN_USERNAME=$VITE_TURN_USERNAME
-ENV VITE_TURN_PASSWORD=$VITE_TURN_PASSWORD
 RUN npm run build
 
 # -------------------------

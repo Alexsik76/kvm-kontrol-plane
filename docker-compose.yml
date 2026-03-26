@@ -55,9 +55,6 @@ services:
       dockerfile: Dockerfile
       args:
       - VITE_API_BASE_URL=${KVM_API_TUNNEL_URL}
-      - VITE_TURN_URL=${EXTERNAL_PUBLIC_IP}
-      - VITE_TURN_USERNAME=${TURN_USERNAME}
-      - VITE_TURN_PASSWORD=${TURN_PASSWORD}
     container_name: kvm_frontend
     restart: unless-stopped
     
