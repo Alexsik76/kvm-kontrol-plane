@@ -104,6 +104,7 @@ services:
     container_name: kvm_turn
     restart: unless-stopped
     network_mode: "host"
+    entrypoint: ["turnserver", "-c", "/etc/coturn/turnserver.conf"]
     volumes:
       - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
 # ------------------------------------------------------------------------------
