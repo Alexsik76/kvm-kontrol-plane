@@ -111,9 +111,10 @@ services:
       - --max-port=50050
       - --user=${TURN_USERNAME}:${TURN_PASSWORD}
       - --realm=lab.vn.ua
-      - --external-ip=${EXTERNAL_PUBLIC_IP}
+      - --external-ip=${EXTERNAL_PUBLIC_IP}/$(hostname -i)
       - --no-tls
       - --no-dtls
+      - --lt-cred-mech
     ports:
       - "3478:3478/tcp"
       - "3478:3478/udp"
