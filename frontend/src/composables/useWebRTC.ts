@@ -9,64 +9,16 @@ export function useWebRTC(nodeId: Ref<string>) {
   const streamStatus = ref('Idle')
   
   const peerConnection = shallowRef<RTCPeerConnection | null>(null)
-  const currentSessionUrl = ref<string | null>(null)
-  const candidateQueue: any[] = []
 
   const updateStatus = (status: string, err: string = '') => {
     streamStatus.value = status
     connectionError.value = err
   }
 
-  const captureAndUploadScreenshot = async () => {
-    if (!videoRef.value || !videoRef.value.videoWidth || !nodeId.value) return
-    try {
-      const canvas = document.createElement('canvas')
-      const scale = Math.min(1, 1280 / videoRef.value.videoWidth)
-      canvas.width = videoRef.value.videoWidth * scale
-      canvas.height = videoRef.value.videoHeight * scale
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      ctx.drawImage(videoRef.value, 0, 0, canvas.width, canvas.height)
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
-      await fetch(`/api/v1/nodes/${nodeId.value}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authStore.accessToken}`
-        },
-        body: JSON.stringify({ screenshot: dataUrl })
-      })
-    } catch (err) {
-      console.error('Failed to capture or upload screenshot:', err)
-    }
-  }
-
-  const sendCandidate = async (candidate: any, sessionUrl: string) => {
-    try {
-      await fetch(`/api/v1/nodes/${nodeId.value}/signal/ice`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authStore.accessToken}`
-        },
-        body: JSON.stringify({
-          candidate: candidate.candidate,
-          sdpMid: candidate.sdpMid,
-          sdpMLineIndex: candidate.sdpMLineIndex,
-          session_url: sessionUrl
-        })
-      })
-    } catch (err) {
-      console.error('Failed to send ICE candidate:', err)
-    }
-  }
-
   const startStream = async () => {
     if (!nodeId.value) return
     loading.value = true
     updateStatus('Negotiating WebRTC...')
-    currentSessionUrl.value = null
-    candidateQueue.length = 0
 
     if (peerConnection.value) {
       peerConnection.value.close()
@@ -87,16 +39,24 @@ export function useWebRTC(nodeId: Ref<string>) {
             credential: "72KO6XDmdWvv3D4F",
           }
         ],
-        iceTransportPolicy: 'all' // Allow local/VPN again
+        iceTransportPolicy: 'all'
       })
 
+      // Trickle ICE
       peerConnection.value.onicecandidate = (event) => {
         if (event.candidate && nodeId.value) {
-          if (currentSessionUrl.value) {
-            sendCandidate(event.candidate, currentSessionUrl.value)
-          } else {
-            candidateQueue.push(event.candidate)
-          }
+          fetch(`/api/v1/nodes/${nodeId.value}/signal/ice`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authStore.accessToken}`
+            },
+            body: JSON.stringify({
+              candidate: event.candidate.candidate,
+              sdpMid: event.candidate.sdpMid,
+              sdpMLineIndex: event.candidate.sdpMLineIndex
+            })
+          }).catch(err => console.error('Failed to send ICE candidate:', err))
         }
       }
 
@@ -104,13 +64,25 @@ export function useWebRTC(nodeId: Ref<string>) {
 
       peerConnection.value.ontrack = (event) => {
         if (videoRef.value && event.streams && event.streams[0]) {
-          videoRef.value.srcObject = event.streams[0]
+          // Robust stream assignment
+          if (videoRef.value.srcObject !== event.streams[0]) {
+            videoRef.value.srcObject = event.streams[0]
+            console.log('WebRTC Stream attached successfully')
+          }
           updateStatus('Connected')
           loading.value = false
-          videoRef.value.onloadeddata = () => {
-            captureAndUploadScreenshot()
-            if (videoRef.value) videoRef.value.onloadeddata = null
-          }
+        }
+      }
+
+      peerConnection.value.onconnectionstatechange = () => {
+        const state = peerConnection.value?.connectionState
+        console.log('WebRTC Connection State:', state)
+        if (state === 'connected') {
+          updateStatus('Connected')
+          loading.value = false
+        } else if (state === 'failed' || state === 'disconnected') {
+          updateStatus('Connection Lost')
+          loading.value = false
         }
       }
 
@@ -129,16 +101,6 @@ export function useWebRTC(nodeId: Ref<string>) {
       if (!response.ok) throw new Error('Signaling failed')
 
       const answer = await response.json()
-      currentSessionUrl.value = answer.session_url
-
-      // Flush queued candidates
-      if (currentSessionUrl.value) {
-        while (candidateQueue.length > 0) {
-          const cand = candidateQueue.shift()
-          sendCandidate(cand, currentSessionUrl.value)
-        }
-      }
-
       await peerConnection.value.setRemoteDescription({
         type: answer.type,
         sdp: answer.sdp

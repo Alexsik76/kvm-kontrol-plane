@@ -1,8 +1,8 @@
 """
 api/signaling.py
 
-WebRTC signaling router — relays SDP offers and ICE candidates from the browser 
-to the MediaMTX instance running on the Raspberry Pi.
+WebRTC signaling router — relays SDP offers and ICE candidates.
+Uses a simple in-memory map to track WHEP sessions for Trickle ICE.
 """
 
 import logging
@@ -21,6 +21,10 @@ from services.node_url import get_node_http_url
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["signaling"])
+
+# In-memory store for WHEP session URLs: {node_id: last_session_url}
+# Note: In multi-user production, use Redis or session-id from frontend.
+_session_storage = {}
 
 @router.post(
     "/nodes/{node_id}/signal/offer",
@@ -49,14 +53,15 @@ async def signal_offer(
             )
             response.raise_for_status()
             
-            # WHEP specification: The session URL is returned in the 'Location' header.
-            # We must use this URL for subsequent ICE candidates (PATCH).
-            session_url = response.headers.get("Location")
-            if session_url and session_url.startswith("/"):
+            # Store the session URL for subsequent ICE candidates
+            session_path = response.headers.get("Location")
+            if session_path:
                 parsed_base = urlparse(mediamtx_url)
-                session_url = f"{parsed_base.scheme}://{parsed_base.netloc}{session_url}"
+                full_session_url = f"{parsed_base.scheme}://{parsed_base.netloc}{session_path}"
+                _session_storage[node.id] = full_session_url
+                logger.debug("Stored session URL for node %s: %s", node.id, full_session_url)
             
-            return SDPAnswer(sdp=response.text, type="answer", session_url=session_url)
+            return SDPAnswer(sdp=response.text, type="answer")
         except Exception as exc:
             logger.error("Signaling offer failed: %s", exc)
             raise HTTPException(
@@ -73,13 +78,11 @@ async def signal_ice(
     candidate: ICECandidate,
     node: Annotated[KvmNode, Depends(require_node_access())],
 ) -> None:
-    """Forward a trickle ICE candidate to the specific WHEP session URL."""
-    # Use the session_url provided by the frontend, or fallback to the node's base URL
-    target_url = candidate.session_url or get_node_http_url(node)
+    """Forward a trickle ICE candidate using the stored session URL."""
+    target_url = _session_storage.get(node.id) or get_node_http_url(node)
     
     async with httpx.AsyncClient(timeout=2.0) as client:
         try:
-            # WHEP protocol: trickle ICE candidates are sent via PATCH
             await client.patch(
                 target_url,
                 content=candidate.candidate,
