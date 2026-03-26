@@ -69,7 +69,8 @@ export function useWebRTC(nodeId: Ref<string>) {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: `turn:${import.meta.env.VITE_TURN_URL}:3478`, username: import.meta.env.VITE_TURN_USERNAME, credential: import.meta.env.VITE_TURN_PASSWORD }
-        ]
+        ],
+        iceTransportPolicy: 'relay'
       })
 
       peerConnection.value.addTransceiver('video', { direction: 'recvonly' })
