@@ -7,7 +7,6 @@ export function useWebRTC(nodeId: Ref<string>) {
   const loading = ref(false)
   const connectionError = ref('')
   const streamStatus = ref('Idle')
-  
   const peerConnection = shallowRef<RTCPeerConnection | null>(null)
 
   const updateStatus = (status: string, err: string = '') => {
@@ -18,7 +17,7 @@ export function useWebRTC(nodeId: Ref<string>) {
   const startStream = async () => {
     if (!nodeId.value) return
     loading.value = true
-    updateStatus('Negotiating WebRTC...')
+    updateStatus('Gathering candidates...')
 
     if (peerConnection.value) {
       peerConnection.value.close()
@@ -42,52 +41,42 @@ export function useWebRTC(nodeId: Ref<string>) {
         iceTransportPolicy: 'all'
       })
 
-      // Trickle ICE
-      peerConnection.value.onicecandidate = (event) => {
-        if (event.candidate && nodeId.value) {
-          fetch(`/api/v1/nodes/${nodeId.value}/signal/ice`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authStore.accessToken}`
-            },
-            body: JSON.stringify({
-              candidate: event.candidate.candidate,
-              sdpMid: event.candidate.sdpMid,
-              sdpMLineIndex: event.candidate.sdpMLineIndex
-            })
-          }).catch(err => console.error('Failed to send ICE candidate:', err))
-        }
-      }
-
       peerConnection.value.addTransceiver('video', { direction: 'recvonly' })
 
       peerConnection.value.ontrack = (event) => {
         if (videoRef.value && event.streams && event.streams[0]) {
-          // Robust stream assignment
-          if (videoRef.value.srcObject !== event.streams[0]) {
-            videoRef.value.srcObject = event.streams[0]
-            console.log('WebRTC Stream attached successfully')
-          }
+          videoRef.value.srcObject = event.streams[0]
           updateStatus('Connected')
           loading.value = false
         }
       }
 
-      peerConnection.value.onconnectionstatechange = () => {
-        const state = peerConnection.value?.connectionState
-        console.log('WebRTC Connection State:', state)
-        if (state === 'connected') {
-          updateStatus('Connected')
-          loading.value = false
-        } else if (state === 'failed' || state === 'disconnected') {
-          updateStatus('Connection Lost')
-          loading.value = false
-        }
-      }
-
+      // We wait for candidates to be gathered before sending the offer.
+      // This is the most compatible way for Cloudflare Tunnels.
       const offer = await peerConnection.value.createOffer()
       await peerConnection.value.setLocalDescription(offer)
+
+      // Wait for ICE gathering to complete (max 3 seconds)
+      await new Promise<void>((resolve) => {
+        if (peerConnection.value?.iceGatheringState === 'complete') {
+          resolve()
+        } else {
+          const checkState = () => {
+            if (peerConnection.value?.iceGatheringState === 'complete') {
+              peerConnection.value?.removeEventListener('icegatheringstatechange', checkState)
+              resolve()
+            }
+          }
+          peerConnection.value?.addEventListener('icegatheringstatechange', checkState)
+          // Safety timeout
+          setTimeout(resolve, 3000)
+        }
+      })
+
+      updateStatus('Signaling...')
+      
+      const currentOffer = peerConnection.value.localDescription
+      if (!currentOffer) throw new Error('Failed to create local description')
 
       const response = await fetch(`/api/v1/nodes/${nodeId.value}/signal/offer`, {
         method: 'POST',
@@ -95,10 +84,10 @@ export function useWebRTC(nodeId: Ref<string>) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authStore.accessToken}`
         },
-        body: JSON.stringify({ sdp: offer.sdp, type: offer.type })
+        body: JSON.stringify({ sdp: currentOffer.sdp, type: currentOffer.type })
       })
 
-      if (!response.ok) throw new Error('Signaling failed')
+      if (!response.ok) throw new Error(`Signaling failed: ${response.status}`)
 
       const answer = await response.json()
       await peerConnection.value.setRemoteDescription({
@@ -106,8 +95,8 @@ export function useWebRTC(nodeId: Ref<string>) {
         sdp: answer.sdp
       })
     } catch (err: any) {
-      console.error('WebRTC streaming error:', err)
-      updateStatus('Failed to connect', err.message)
+      console.error('WebRTC error:', err)
+      updateStatus('Failed', err.message)
       loading.value = false
     }
   }
