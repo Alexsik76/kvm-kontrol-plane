@@ -99,14 +99,6 @@ services:
       timeout: 5s
       retries: 5
 
-  turn:
-    image: coturn/coturn:latest
-    container_name: kvm_turn
-    restart: unless-stopped
-    network_mode: "host"
-    entrypoint: ["turnserver", "-c", "/etc/coturn/turnserver.conf"]
-    volumes:
-      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
 # ------------------------------------------------------------------------------
 # Named volumes
 # ------------------------------------------------------------------------------
