@@ -103,21 +103,7 @@ services:
     image: coturn/coturn:latest
     container_name: kvm_turn
     restart: unless-stopped
-    command:
-      - turnserver
-      - -n
-      - --log-file=stdout
-      - --listening-port=3478
-      - --min-port=50000
-      - --max-port=50050
-      - --user=${TURN_USERNAME}:${TURN_PASSWORD}
-      - --realm=lab.vn.ua
-      - --external-ip=${EXTERNAL_PUBLIC_IP}
-      - --listening-ip=0.0.0.0
-      - --relay-ip=0.0.0.0
-      - --lt-cred-mech
-      - --no-tls
-      - --no-dtls
+    command: /bin/sh -c "turnserver -n --log-file=stdout --listening-port=3478 --min-port=50000 --max-port=50050 --user=${TURN_USERNAME}:${TURN_PASSWORD} --realm=lab.vn.ua --external-ip=${EXTERNAL_PUBLIC_IP} --listening-ip=0.0.0.0 --relay-ip=0.0.0.0 --lt-cred-mech --no-tls --no-dtls"
     ports:
       - "3478:3478/tcp"
       - "3478:3478/udp"
