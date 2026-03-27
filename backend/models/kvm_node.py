@@ -8,7 +8,7 @@ SQLAlchemy ORM model for the ``kvm_nodes`` table.
 import uuid
 from datetime import UTC, datetime
 from enum import Enum as PyEnum
-from typing import Optional
+from typing import Optional, List
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -106,7 +106,7 @@ class KvmNode(SQLModel, table=True):
         sa_column=Column(sa.DateTime(timezone=True), nullable=False),
     )
 
-    user_permissions: list[UserNodePermission] = Relationship(
+    user_permissions: List["UserNodePermission"] = Relationship(
         back_populates="node",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )

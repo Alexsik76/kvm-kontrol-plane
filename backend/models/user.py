@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 models/user.py
 
@@ -6,7 +7,7 @@ SQLAlchemy ORM model for the ``users`` table.
 
 import uuid
 from datetime import UTC, datetime
-from typing import Optional
+from typing import Optional, List
 from typing import TYPE_CHECKING
 import sqlalchemy as sa
 from sqlmodel import Field, Relationship, SQLModel
@@ -47,7 +48,7 @@ class User(SQLModel, table=True):
     )
 
     # Back-reference to the permission join table.
-    node_permissions: list["UserNodePermission"] = Relationship(
+    node_permissions: List["UserNodePermission"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",

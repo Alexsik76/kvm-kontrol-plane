@@ -81,11 +81,11 @@ class UserNodePermission(SQLModel, table=True):
     # ORM relationships — use string refs to avoid circular imports.
     # foreign_keys must be explicit because there are TWO FKs to the users table
     # (user_id and granted_by_id), so SQLAlchemy cannot infer which one to use.
-    user: User = Relationship(
+    user: "User" = Relationship(
         back_populates="node_permissions",
         sa_relationship_kwargs={"foreign_keys": "UserNodePermission.user_id"},
     )
-    node: KvmNode = Relationship(
+    node: "KvmNode" = Relationship(
         back_populates="user_permissions",
         sa_relationship_kwargs={"foreign_keys": "UserNodePermission.node_id"},
     )
