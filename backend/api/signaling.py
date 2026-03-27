@@ -41,7 +41,7 @@ async def signal_offer(
         )
 
     # Use a longer timeout for the initial handshake
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=10.0, auth=(node.mediamtx_user, node.mediamtx_pass)) as client:
         try:
             response = await client.post(
                 mediamtx_url,
@@ -81,7 +81,7 @@ async def signal_ice(
     # Front-end provides the session_url it received from the offer
     target_url = candidate.session_url or get_node_http_url(node)
     
-    async with httpx.AsyncClient(timeout=2.0) as client:
+    async with httpx.AsyncClient(timeout=2.0, auth=(node.mediamtx_user, node.mediamtx_pass)) as client:
         try:
             # MediaMTX WHEP implementation uses PATCH for ICE candidates
             await client.patch(

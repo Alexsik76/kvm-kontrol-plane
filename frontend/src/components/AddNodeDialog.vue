@@ -14,7 +14,9 @@ const newNode = ref({
   tunnel_url: '',
   ws_port: 8080,
   mediamtx_api_port: 9997,
-  stream_name: 'kvm'
+  stream_name: 'kvm',
+  mediamtx_user: 'admin',
+  mediamtx_pass: 'password'
 })
 
 const machineInfoList = ref<{key: string, value: string}[]>([])
@@ -54,6 +56,8 @@ const submitNode = async () => {
       ws_port: newNode.value.ws_port,
       mediamtx_api_port: newNode.value.mediamtx_api_port,
       stream_name: newNode.value.stream_name,
+      mediamtx_user: newNode.value.mediamtx_user,
+      mediamtx_pass: newNode.value.mediamtx_pass,
       ...(machineInfoObj && { machine_info: machineInfoObj })
     }
 
@@ -72,7 +76,16 @@ const submitNode = async () => {
     }
     
     dialogOpen.value = false
-    newNode.value = { name: '', internal_ip: '', tunnel_url: '', ws_port: 8080, mediamtx_api_port: 9997, stream_name: 'kvm' }
+    newNode.value = { 
+      name: '', 
+      internal_ip: '', 
+      tunnel_url: '', 
+      ws_port: 8080, 
+      mediamtx_api_port: 9997, 
+      stream_name: 'kvm',
+      mediamtx_user: 'admin',
+      mediamtx_pass: 'password'
+    }
     machineInfoList.value = []
     emit('node-added') // Tell parent to refresh
   } catch (err: any) {
@@ -107,6 +120,15 @@ const submitNode = async () => {
           <v-text-field v-model="newNode.internal_ip" label="Internal IP" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. 10.8.0.10"></v-text-field>
           <v-text-field v-model="newNode.tunnel_url" label="Tunnel URL (Cloudflare)" variant="outlined" density="comfortable" class="mb-2" hint="e.g. https://pi4.lab.vn.ua"></v-text-field>
           <v-text-field v-model="newNode.stream_name" label="Stream Name (MediaMTX Path)" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. kvm"></v-text-field>
+
+          <v-row mb-0>
+            <v-col cols="6">
+              <v-text-field v-model="newNode.mediamtx_user" label="MediaMTX User" variant="outlined" density="comfortable" class="mb-2" required></v-text-field>
+            </v-col>
+            <v-col cols="6">
+              <v-text-field v-model="newNode.mediamtx_pass" label="MediaMTX Password" variant="outlined" density="comfortable" class="mb-2" required type="password"></v-text-field>
+            </v-col>
+          </v-row>
           
           <v-row mb-0>
             <v-col cols="6">

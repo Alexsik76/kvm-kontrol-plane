@@ -77,6 +77,8 @@ class KvmNodeUpdate(SQLModel):
     ws_port: Optional[int] = Field(None, ge=1, le=65535)
     mediamtx_api_port: Optional[int] = Field(None, ge=1, le=65535)
     stream_name: Optional[str] = Field(None, min_length=1, max_length=64)
+    mediamtx_user: Optional[str] = Field(None, max_length=64)
+    mediamtx_pass: Optional[str] = Field(None, max_length=64)
     machine_info: Optional[dict] = None
     screenshot: Optional[str] = Field(
         None, description="Base64 encoded Data URL of the latest screenshot"
