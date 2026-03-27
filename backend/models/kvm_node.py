@@ -106,7 +106,7 @@ class KvmNode(SQLModel, table=True):
         sa_column=Column(sa.DateTime(timezone=True), nullable=False),
     )
 
-    user_permissions: list["UserNodePermission"] = Relationship(  # type: ignore[name-defined]
+    user_permissions: list[UserNodePermission] = Relationship(
         back_populates="node",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
