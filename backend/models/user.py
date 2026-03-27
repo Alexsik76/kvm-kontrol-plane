@@ -6,7 +6,7 @@ SQLAlchemy ORM model for the ``users`` table.
 
 import uuid
 from datetime import UTC, datetime
-
+from typing import Optional
 from typing import TYPE_CHECKING
 import sqlalchemy as sa
 from sqlmodel import Field, Relationship, SQLModel
@@ -35,7 +35,7 @@ class User(SQLModel, table=True):
 
     __tablename__ = "users"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
     username: str = Field(max_length=64, unique=True, nullable=False, index=True)
     email: str = Field(max_length=255, unique=True, nullable=False, index=True)
     hashed_password: str = Field(max_length=255, nullable=False)

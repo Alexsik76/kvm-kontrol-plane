@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 models/user_node_permission.py
 
@@ -51,7 +52,7 @@ class UserNodePermission(SQLModel, table=True):
 
     __table_args__ = (sa.UniqueConstraint("user_id", "node_id", name="uq_user_node"),)
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(
         foreign_key="users.id",
         ondelete="CASCADE",

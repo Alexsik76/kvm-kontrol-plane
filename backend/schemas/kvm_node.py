@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 schemas/kvm_node.py
 
@@ -42,6 +44,14 @@ class KvmNodeBase(SQLModel):
     mediamtx_api_port: int = Field(default=9997, ge=1, le=65535)
     stream_name: str = Field(
         default="kvm", min_length=1, max_length=64, description="MediaMTX stream path."
+    )
+    mediamtx_user: str = Field(
+        default="admin", 
+        description="Username for MediaMTX internal authentication."
+    )
+    mediamtx_pass: str = Field(
+        default="password", 
+        description="Password/Token for MediaMTX internal authentication."
     )
 
 

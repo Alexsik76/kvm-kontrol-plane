@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 models/kvm_node.py
 
@@ -13,6 +14,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Column, Field, Relationship, SQLModel
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from models.user_node_permission import UserNodePermission
@@ -73,6 +75,18 @@ class KvmNode(SQLModel, table=True):
         sa_column_kwargs={"server_default": "kvm"},
         nullable=False,
     )
+    mediamtx_user: str = Field(
+        default="admin",
+        max_length=64,
+        nullable=False,
+        sa_column_kwargs={"server_default": "admin"}
+    )
+    mediamtx_pass: str = Field(
+        default="password",
+        max_length=64,
+        nullable=False,
+        sa_column_kwargs={"server_default": "password"}
+    )
     status: NodeStatus = Field(
         default=NodeStatus.UNKNOWN,
         sa_column=Column(
@@ -81,8 +95,8 @@ class KvmNode(SQLModel, table=True):
             default=NodeStatus.UNKNOWN,
         ),
     )
-    machine_info: dict | None = Field(default=None, sa_column=Column(JSONB))
-    screenshot: str | None = Field(default=None, sa_column=Column(sa.Text))
+    machine_info: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
+    screenshot: Optional[str] = Field(default=None, sa_column=Column(sa.Text))
     # Optional[X] inside Mapped[] works on SA>=2.0.41 / Python 3.14
     last_seen_at: Optional[datetime] = Field(
         default=None, sa_column=Column(sa.DateTime(timezone=True))
