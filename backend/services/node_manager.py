@@ -38,14 +38,7 @@ async def get_all_nodes(
 
 async def create_node(db: AsyncSession, data: KvmNodeCreate) -> KvmNode:
     """Persist a new KVM node record and return it with server-generated fields."""
-    node = KvmNode(
-        name=data.name,
-        internal_ip=data.internal_ip,
-        ws_port=data.ws_port,
-        mediamtx_api_port=data.mediamtx_api_port,
-        stream_name=data.stream_name,
-        machine_info=data.machine_info,
-    )
+    node = KvmNode.model_validate(data)
     db.add(node)
     await db.flush()  # get the generated UUID before commit
     await db.refresh(node)
