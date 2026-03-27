@@ -7,6 +7,7 @@ their availability and updates the `status` and `last_seen_at` fields in the DB.
 
 import asyncio
 import logging
+import base64
 from datetime import datetime, timezone
 
 import httpx
@@ -63,12 +64,18 @@ class NodeHealthService:
         url = get_node_http_url(node)
 
         is_online = False
+        headers = {}
+        if node.mediamtx_user and node.mediamtx_pass:
+            auth_str = f"{node.mediamtx_user}:{node.mediamtx_pass}"
+            encoded_auth = base64.b64encode(auth_str.encode("utf-8")).decode("utf-8")
+            headers["Authorization"] = f"Basic {encoded_auth}"
+
         try:
             async with httpx.AsyncClient(
                 timeout=settings.NODE_HTTP_TIMEOUT_SECONDS
             ) as client:
                 # Use OPTIONS as a lightweight ping that asks the server what methods are allowed
-                response = await client.options(url)
+                response = await client.options(url, headers=headers)
                 # MediaMTX might return 200, 204 or 405 Method Not Allowed.
                 # A 404 means the stream path or WHEP itself is missing.
                 if response.status_code in (200, 204, 401, 403, 405):

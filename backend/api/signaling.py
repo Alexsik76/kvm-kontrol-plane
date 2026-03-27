@@ -6,6 +6,7 @@ to the MediaMTX instance running on the Raspberry Pi.
 """
 
 import logging
+import base64
 from typing import Annotated
 from urllib.parse import urlparse
 
@@ -21,6 +22,14 @@ from services.node_url import get_node_http_url
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["signaling"])
+
+def _get_auth_header(node: KvmNode) -> dict:
+    """Generate the Basic Auth header for MediaMTX requests."""
+    if not node.mediamtx_user or not node.mediamtx_pass:
+        return {}
+    auth_str = f"{node.mediamtx_user}:{node.mediamtx_pass}"
+    encoded_auth = base64.b64encode(auth_str.encode("utf-8")).decode("utf-8")
+    return {"Authorization": f"Basic {encoded_auth}"}
 
 @router.post(
     "/nodes/{node_id}/signal/offer",
@@ -40,13 +49,16 @@ async def signal_offer(
             detail="Internal error building node URL",
         )
 
+    headers = {"Content-Type": "application/sdp"}
+    headers.update(_get_auth_header(node))
+
     # Use a longer timeout for the initial handshake
-    async with httpx.AsyncClient(timeout=10.0, auth=(node.mediamtx_user, node.mediamtx_pass)) as client:
+    async with httpx.AsyncClient(timeout=10.0) as client:
         try:
             response = await client.post(
                 mediamtx_url,
                 content=offer.sdp,
-                headers={"Content-Type": "application/sdp"},
+                headers=headers,
             )
             
             if response.status_code not in (200, 201):
@@ -81,13 +93,16 @@ async def signal_ice(
     # Front-end provides the session_url it received from the offer
     target_url = candidate.session_url or get_node_http_url(node)
     
-    async with httpx.AsyncClient(timeout=2.0, auth=(node.mediamtx_user, node.mediamtx_pass)) as client:
+    headers = {"Content-Type": "application/trickle-ice-sdpfrag"}
+    headers.update(_get_auth_header(node))
+
+    async with httpx.AsyncClient(timeout=2.0) as client:
         try:
             # MediaMTX WHEP implementation uses PATCH for ICE candidates
             await client.patch(
                 target_url,
                 content=candidate.candidate,
-                headers={"Content-Type": "application/trickle-ice-sdpfrag"}
+                headers=headers
             )
         except Exception as exc:
             logger.warning("Failed to forward ICE candidate to %s: %s", target_url, exc)
