@@ -1,4 +1,3 @@
-from __future__ import annotations
 """
 models/user.py
 
@@ -7,8 +6,7 @@ SQLAlchemy ORM model for the ``users`` table.
 
 import uuid
 from datetime import UTC, datetime
-from typing import Optional, List
-from typing import TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 import sqlalchemy as sa
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -17,23 +15,6 @@ if TYPE_CHECKING:
 
 
 class User(SQLModel, table=True):
-    """Represents an authenticated user of the Control Plane.
-
-    Columns
-    -------
-    id              Primary key (UUID v4).
-    username        Unique login handle.
-    email           Unique e-mail address.
-    hashed_password Bcrypt hash — plain text is never stored.
-    is_active       Soft-delete / account suspension flag.
-    is_superuser    Grants unrestricted access to all nodes and admin APIs.
-    created_at      UTC timestamp of account creation.
-
-    Relationships
-    -------------
-    node_permissions  Link to ``user_node_permissions`` (M2M with KvmNode).
-    """
-
     __tablename__ = "users"
 
     id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -47,7 +28,6 @@ class User(SQLModel, table=True):
         sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False),
     )
 
-    # Back-reference to the permission join table.
     node_permissions: List["UserNodePermission"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={
