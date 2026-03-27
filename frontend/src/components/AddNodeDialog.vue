@@ -13,10 +13,10 @@ const newNode = ref({
   internal_ip: '',
   tunnel_url: '',
   ws_port: 8080,
-  mediamtx_api_port: 9997,
+  mediamtx_api_port: 30000,
   stream_name: 'kvm',
-  mediamtx_user: 'admin',
-  mediamtx_pass: 'password'
+  mediamtx_user: '',
+  mediamtx_pass: ''
 })
 
 const machineInfoList = ref<{key: string, value: string}[]>([])
@@ -83,8 +83,8 @@ const submitNode = async () => {
       ws_port: 8080, 
       mediamtx_api_port: 9997, 
       stream_name: 'kvm',
-      mediamtx_user: 'admin',
-      mediamtx_pass: 'password'
+      mediamtx_user: '',
+      mediamtx_pass: ''
     }
     machineInfoList.value = []
     emit('node-added') // Tell parent to refresh
