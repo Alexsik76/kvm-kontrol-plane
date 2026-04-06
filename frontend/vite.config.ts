@@ -11,7 +11,7 @@ export default defineConfig(({ command, mode }) => {
   // environment variable at container startup.
   // During dev, we use the actual env variable (if provided) or fallback to empty string (which uses the relative proxy).
   const apiBaseUrl = command === 'build' 
-    ? '__VITE_API_BASE_URL_PLACEHOLDER__' 
+    ? JSON.stringify('__VITE_API_BASE_URL_PLACEHOLDER__') 
     : JSON.stringify(env.VITE_API_BASE_URL || '');
 
   return {
