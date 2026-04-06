@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     # --- CORS ---
     # Accepts a comma-separated string from the env; validated into a list below
-    CORS_ORIGINS: str = "http://localhost:3000"
+    CORS_ORIGINS: str = "http://localhost:3000,https://kvm.lab.vn.ua"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
