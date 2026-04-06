@@ -19,8 +19,18 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
 
     // Ensure we are using the LATEST token from the store
     const currentToken = authStore.accessToken
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsUrl = `${protocol}//${window.location.host}/api/v1/nodes/${nodeId.value}/ws?token=${currentToken}`
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    let wsBase: string;
+
+    if (apiBaseUrl) {
+      // Convert https://... to wss://... or http://... to ws://...
+      wsBase = apiBaseUrl.replace(/^http/, 'ws');
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      wsBase = `${protocol}//${window.location.host}`;
+    }
+
+    const wsUrl = `${wsBase}/api/v1/nodes/${nodeId.value}/ws?token=${currentToken}`
     
     wsConnection.value = new WebSocket(wsUrl)
     
@@ -125,7 +135,8 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
   const wakeHost = async () => {
     if (!nodeId.value) return
     try {
-      await fetch(`/api/v1/nodes/${nodeId.value}/ws/wake`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/ws/wake`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authStore.accessToken}`

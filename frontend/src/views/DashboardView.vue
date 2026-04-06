@@ -14,7 +14,8 @@ const loading = ref(true)
 const fetchNodes = async () => {
   loading.value = true
   try {
-    const response = await fetch('/api/v1/nodes', {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const response = await fetch(`${apiBaseUrl}/api/v1/nodes`, {
       headers: {
         'Authorization': `Bearer ${authStore.accessToken}`
       }
@@ -48,7 +49,8 @@ const performDelete = async () => {
   if (!nodeToDelete.value) return
   deleting.value = true
   try {
-    const response = await fetch(`/api/v1/nodes/${nodeToDelete.value.id}`, {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const response = await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeToDelete.value.id}`, {
       method: 'DELETE',
       headers: {
          'Authorization': `Bearer ${authStore.accessToken}`

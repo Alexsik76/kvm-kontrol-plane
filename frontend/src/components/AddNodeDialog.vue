@@ -61,7 +61,8 @@ const submitNode = async () => {
       ...(machineInfoObj && { machine_info: machineInfoObj })
     }
 
-    const response = await fetch('/api/v1/nodes', {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const response = await fetch(`${apiBaseUrl}/api/v1/nodes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

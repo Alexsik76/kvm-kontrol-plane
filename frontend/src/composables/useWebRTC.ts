@@ -37,7 +37,8 @@ export function useWebRTC(nodeId: Ref<string>) {
       // Send candidates immediately as they are found (Trickle ICE)
       peerConnection.value.onicecandidate = (event) => {
         if (event.candidate && nodeId.value && currentSessionUrl.value) {
-          fetch(`/api/v1/nodes/${nodeId.value}/signal/ice`, {
+          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+          fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/signal/ice`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -67,7 +68,8 @@ export function useWebRTC(nodeId: Ref<string>) {
       await peerConnection.value.setLocalDescription(offer)
 
       // Signaling
-      const response = await fetch(`/api/v1/nodes/${nodeId.value}/signal/offer`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const response = await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/signal/offer`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

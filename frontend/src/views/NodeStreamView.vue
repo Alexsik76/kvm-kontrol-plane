@@ -25,7 +25,8 @@ const handleStreamStatus = (payload: { status: string, error: string }) => {
 // Fetch node details for the header
 const fetchNodeDetails = async () => {
   try {
-    const response = await fetch(`/api/v1/nodes/${nodeId}`, {
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    const response = await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId}`, {
       headers: {
         'Authorization': `Bearer ${authStore.accessToken}`
       }
