@@ -86,6 +86,7 @@ onMounted(() => {
           <v-col cols="12" md="8" lg="9" class="d-flex flex-column h-100">
             <WebRTCPlayer 
               :node-id="nodeId" 
+              :node-domain="node?.domain || ''"
               :node-ip="node?.internal_ip"
               @status-changed="handleStreamStatus" 
               @capture-change="isHidCaptured = $event"

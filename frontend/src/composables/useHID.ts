@@ -2,14 +2,13 @@ import { ref, shallowRef, watch, onBeforeUnmount, type Ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { resetKeyboardState } from '../utils/hid'
 
-export function useHID(nodeId: Ref<string>, onReset?: () => void) {
+export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
   const authStore = useAuthStore()
   const wsConnection = shallowRef<WebSocket | null>(null)
   const isHidConnected = ref(false)
 
-
   const connectHID = () => {
-    if (!nodeId.value) return
+    if (!nodeDomain.value) return
     
     // Always clear existing connection properly
     if (wsConnection.value) {
@@ -19,18 +18,8 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
 
     // Ensure we are using the LATEST token from the store
     const currentToken = authStore.accessToken
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    let wsBase: string;
 
-    if (apiBaseUrl) {
-      // Convert https://... to wss://... or http://... to ws://...
-      wsBase = apiBaseUrl.replace(/^http/, 'ws');
-    } else {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      wsBase = `${protocol}//${window.location.host}`;
-    }
-
-    const wsUrl = `${wsBase}/api/v1/nodes/${nodeId.value}/ws?token=${currentToken}`
+    const wsUrl = `wss://${nodeDomain.value}/ws/control?token=${currentToken}`
     
     wsConnection.value = new WebSocket(wsUrl)
     
@@ -45,21 +34,21 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
     }
 
     wsConnection.value.onmessage = (event) => {
-  try {
-    const msg = JSON.parse(event.data);
-    if (msg.type === 'reset_hid') {
-      console.warn('HID Server requested state reset (NACK)');
-      
-      // Clears local sets and generates { type: "keyboard", data: { modifiers: 0, keys: "" } }
-      const resetMsg = resetKeyboardState();
-      sendHIDMessage(resetMsg);
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'reset_hid') {
+          console.warn('HID Server requested state reset (NACK)');
+          
+          // Clears local sets and generates { type: "keyboard", data: { modifiers: 0, keys: "" } }
+          const resetMsg = resetKeyboardState();
+          sendHIDMessage(resetMsg);
 
-      if (onReset) onReset();
-    }
-  } catch (err) {
-    console.error('Failed to parse HID WS message:', err);
-  }
-};
+          if (onReset) onReset();
+        }
+      } catch (err) {
+        console.error('Failed to parse HID WS message:', err);
+      }
+    };
   }
 
   const MSG_INTERVAL_MS = 10;
@@ -112,8 +101,8 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
     }
   }
 
-  watch(nodeId, (id) => {
-    if (id) {
+  watch(nodeDomain, (domain) => {
+    if (domain) {
       connectHID()
     } else {
       if (wsConnection.value) {
@@ -133,10 +122,9 @@ export function useHID(nodeId: Ref<string>, onReset?: () => void) {
   })
 
   const wakeHost = async () => {
-    if (!nodeId.value) return
+    if (!nodeDomain.value) return
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/ws/wake`, {
+      await fetch(`https://${nodeDomain.value}/ws/wake`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authStore.accessToken}`

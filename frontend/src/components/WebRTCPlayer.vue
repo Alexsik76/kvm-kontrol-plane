@@ -9,6 +9,7 @@ import WebRTCStatusOverlay from './WebRTCStatusOverlay.vue'
 
 const props = defineProps<{
   nodeId: string
+  nodeDomain: string
 }>()
 
 const emit = defineEmits<{
@@ -17,6 +18,7 @@ const emit = defineEmits<{
 }>()
 
 const nodeId = toRef(props, 'nodeId')
+const nodeDomain = toRef(props, 'nodeDomain')
 
 const {
   videoRef,
@@ -31,7 +33,7 @@ const {
   sendHIDMessage,
   connectHID,
   wakeHost
-} = useHID(nodeId, () => {
+} = useHID(nodeDomain, () => {
   // Reset local state when backend NACKs a write failure
   sendHIDMessage(resetKeyboardState())
 })
