@@ -65,15 +65,17 @@
 
 ---
 
-## 2. Управління (HID) через WebSocket Proxy
+## 2. Пряме управління (HID) через WebSocket
+
+Бекенд більше не проксіює HID-трафік для зменшення затримок. Клієнти повинні підключатися **безпосередньо до кінцевого вузла** (використовуючи `tunnel_url` або `internal_ip`, отримані з деталей вузла).
 
 ### 2.1. WebSocket з'єднання
-**URL:** `GET /nodes/{node_id}/ws`
+**URL:** `wss://<node_domain>/ws/control`
 
-Використовується для передачі подій клавіатури та миші в реальному часі.
+Використовується для передачі подій клавіатури та миші в реальному часі безпосередньо на KVM-вузол (Raspberry Pi).
 
 - **Автентифікація:** Токен передається як параметр рядка запиту.
-- **Формат:** `wss://kvm-api.lab.vn.ua/api/v1/nodes/{node_id}/ws?token=<JWT_ACCESS_TOKEN>`
+- **Формат:** `wss://<node_domain>/ws/control?token=<JWT_ACCESS_TOKEN>`
 
 ---
 
@@ -100,7 +102,10 @@
 **URL:** `GET https://kvm-api.lab.vn.ua/api/v1/nodes/{node_id}/status`
 
 ### 4.3. Пробудження (Wake-on-USB)
-**URL:** `POST https://kvm-api.lab.vn.ua/api/v1/nodes/{node_id}/ws/wake`
+**URL:** `POST https://<node_domain>/ws/wake`
+
+Використовується для відправки магічного сигналу скидання USB. Запит відправляється **напряму на вузол** (не через API).
+- **Заголовки:** `Authorization: Bearer <JWT_ACCESS_TOKEN>`
 
 ---
 
