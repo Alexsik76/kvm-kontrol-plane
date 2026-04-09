@@ -86,7 +86,7 @@ onMounted(() => {
           <v-col cols="12" md="8" lg="9" class="d-flex flex-column h-100">
             <WebRTCPlayer 
               :node-id="nodeId" 
-              :node-domain="node?.domain || ''"
+              :node-domain="nodeDomain"
               :node-ip="node?.internal_ip"
               @status-changed="handleStreamStatus" 
               @capture-change="isHidCaptured = $event"
@@ -108,6 +108,17 @@ onMounted(() => {
 
                 <p class="text-body-2 text-medium-emphasis">
                   Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>ESC</b> to release focus and unlock the mouse. For a full immersive experience, use <b>Professional Mode</b> (Fullscreen), where <b>ESC</b> works natively. In windowed mode, use <b>Alt+`</b> to send Escape.
+                </p>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          
+        </v-row>
+      </v-container>
+    </v-main>
+  </v-layout>
+</template>
+ a full immersive experience, use <b>Professional Mode</b> (Fullscreen), where <b>ESC</b> works natively. In windowed mode, use <b>Alt+`</b> to send Escape.
                 </p>
               </v-card-text>
             </v-card>
