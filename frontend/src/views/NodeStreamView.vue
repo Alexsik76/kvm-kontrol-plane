@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import WebRTCPlayer from '../components/WebRTCPlayer.vue'
@@ -12,6 +12,19 @@ const nodeId = route.params.id as string
 const node = ref<any>(null)
 
 const isHidCaptured = ref(false)
+
+const nodeDomain = computed(() => {
+  if (!node.value) return ''
+  if (node.value.tunnel_url) {
+    try {
+      const url = new URL(node.value.tunnel_url)
+      return url.host
+    } catch {
+      return node.value.tunnel_url.replace(/^https?:\/\//, '')
+    }
+  }
+  return node.value.domain || node.value.internal_ip || ''
+})
 
 // Values passed up from WebRTCPlayer component
 const streamStatus = ref('Connecting...')
@@ -108,17 +121,6 @@ onMounted(() => {
 
                 <p class="text-body-2 text-medium-emphasis">
                   Click on the video player to focus it. Keyboard and mouse events will be captured and proxied directly to the KVM node. Use <b>ESC</b> to release focus and unlock the mouse. For a full immersive experience, use <b>Professional Mode</b> (Fullscreen), where <b>ESC</b> works natively. In windowed mode, use <b>Alt+`</b> to send Escape.
-                </p>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          
-        </v-row>
-      </v-container>
-    </v-main>
-  </v-layout>
-</template>
- a full immersive experience, use <b>Professional Mode</b> (Fullscreen), where <b>ESC</b> works natively. In windowed mode, use <b>Alt+`</b> to send Escape.
                 </p>
               </v-card-text>
             </v-card>
