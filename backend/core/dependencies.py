@@ -109,8 +109,8 @@ def require_node_access(*, require_control: bool = False):
     ----------
     require_control:
         If True, the user must have ``can_control=True`` in addition to
-        ``can_view=True``.  Pass True for the WS proxy endpoint; False for
-        read-only endpoints like status or signaling.
+        ``can_view=True``.  Pass True for write-access endpoints (like wake-up);
+        False for read-only endpoints like status or signaling.
 
     Usage in a route
     ----------------
@@ -121,8 +121,8 @@ def require_node_access(*, require_control: bool = False):
         ):
             ...
 
-        @router.websocket("/nodes/{node_id}/ws")
-        async def ws_proxy(
+        @router.post("/nodes/{node_id}/wake")
+        async def wake_node(
             node: KvmNode = Depends(require_node_access(require_control=True)),
             ...
         ):

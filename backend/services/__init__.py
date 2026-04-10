@@ -1,10 +1,10 @@
 """
-services/__init__.py
+services/ package
 
-Business-logic service package.  Services are designed with Single
-Responsibility Principle (SRP) in mind:
-
-    ws_proxy    -- bidirectional WebSocket proxy between the browser and RPi
-    node_health -- background poller that updates KVM node online/offline status
-    node_manager -- CRUD helpers for KVM node records
+Business logic and background tasks.
+Each module here has a Single Responsibility (e.g., node_manager, health check).
 """
+
+from services import node_manager, node_health, node_url
+
+__all__ = ["node_manager", "node_health", "node_url"]

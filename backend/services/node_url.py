@@ -23,10 +23,3 @@ def get_node_control_url(node: KvmNode) -> str:
     if base:
         return f"{base}"
     return f"http://{node.internal_ip}:{node.ws_port}"
-
-def get_node_ws_url(node: KvmNode) -> str:
-    base = _effective_base_url(node)
-    if base:
-        ws_base = base.replace("https://", "wss://", 1).replace("http://", "ws://", 1)
-        return f"{ws_base}/ws/control"
-    return f"ws://{node.internal_ip}:{node.ws_port}/ws/control"

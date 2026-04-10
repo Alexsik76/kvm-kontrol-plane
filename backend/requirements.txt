@@ -23,8 +23,5 @@ bcrypt==4.3.0
 # --- HTTP client (healthcheck poller, SDP relay) ---
 httpx==0.28.1
 
-# --- WebSocket (proxy bridge) ---
-websockets==14.2
-
 # --- Utilities ---
 python-multipart==0.0.20           # required for OAuth2PasswordRequestForm

@@ -25,7 +25,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from api import auth as auth_router
 from api import kvm_nodes as kvm_nodes_router
 from api import signaling as signaling_router
-from api import ws_proxy as ws_proxy_router
 from core.config import settings
 from services.node_health import NodeHealthService
 
@@ -75,8 +74,7 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description=(
         "Control Plane API for IP-KVM hardware nodes. "
-        "Provides secure WebSocket proxying, WebRTC signaling relay, "
-        "and node management."
+        "Provides WebRTC signaling relay and node management."
     ),
     docs_url="/docs",
     redoc_url="/redoc",
@@ -102,9 +100,9 @@ _API_PREFIX = settings.API_V1_PREFIX
 
 app.include_router(auth_router.router, prefix=_API_PREFIX)
 app.include_router(kvm_nodes_router.router, prefix=_API_PREFIX)
-# signaling and ws_proxy use /nodes/{id}/... paths — include at root prefix
+# signaling use /nodes/{id}/... paths — include at root prefix
 app.include_router(signaling_router.router, prefix=_API_PREFIX)
-app.include_router(ws_proxy_router.router, prefix=_API_PREFIX)
+
 
 
 # ---------------------------------------------------------------------------
