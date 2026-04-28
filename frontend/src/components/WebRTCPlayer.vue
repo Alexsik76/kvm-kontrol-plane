@@ -59,11 +59,31 @@ watch([streamStatus, connectionError], ([status, error]) => {
   emit('status-changed', { status: status as string, error: (error as string) || '' })
 })
 
+// === Wake ===
+const isWaking = ref(false)
+const snackbarVisible = ref(false)
+const snackbarMessage = ref('')
+const snackbarColor = ref<'success' | 'error'>('success')
+
+const handleWake = async () => {
+  if (isWaking.value) return
+  isWaking.value = true
+  const result = await wakeHost()
+  if (result.ok) {
+    snackbarMessage.value = 'Wake signal sent'
+    snackbarColor.value = 'success'
+  } else {
+    snackbarMessage.value = `Wake failed: ${result.error ?? 'unknown error'}`
+    snackbarColor.value = 'error'
+  }
+  snackbarVisible.value = true
+  setTimeout(() => { isWaking.value = false }, 2000)
+}
+
 // === Global Keydown for Wake ===
 const handleGlobalKeyDown = (_e: KeyboardEvent) => {
   if (connectionError.value && !loading.value) {
-    console.log('Key pressed during connection error, sending wake signal...')
-    wakeHost()
+    handleWake()
   }
 }
 
@@ -116,12 +136,22 @@ defineExpose({ startCapture, stopCapture })
     ></video>
 
     <!-- Error & Loading Status Overlay -->
-    <WebRTCStatusOverlay 
+    <WebRTCStatusOverlay
       :loading="loading"
       :connection-error="connectionError || null"
       :stream-status="streamStatus"
+      :is-waking="isWaking"
       @retry="startStream"
-      @wake="wakeHost"
+      @wake="handleWake"
     />
+
+    <v-snackbar
+      v-model="snackbarVisible"
+      :color="snackbarColor"
+      location="bottom right"
+      :timeout="3000"
+    >
+      {{ snackbarMessage }}
+    </v-snackbar>
   </v-card>
 </template>

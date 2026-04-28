@@ -121,17 +121,22 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
     }
   })
 
-  const wakeHost = async () => {
-    if (!nodeDomain.value) return
+  const wakeHost = async (): Promise<{ ok: boolean; error?: string }> => {
+    if (!nodeDomain.value) return { ok: false, error: 'No node domain' }
     try {
-      await fetch(`https://${nodeDomain.value}/ws/wake`, {
+      const response = await fetch(`https://${nodeDomain.value}/ws/wake`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authStore.accessToken}`
         }
       })
+      if (!response.ok) {
+        const text = await response.text().catch(() => '')
+        return { ok: false, error: `HTTP ${response.status}${text ? ': ' + text : ''}` }
+      }
+      return { ok: true }
     } catch (err) {
-      console.error('Failed to send wake signal:', err)
+      return { ok: false, error: err instanceof Error ? err.message : String(err) }
     }
   }
 

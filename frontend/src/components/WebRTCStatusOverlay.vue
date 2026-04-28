@@ -3,6 +3,7 @@ defineProps<{
   loading: boolean
   connectionError: string | null
   streamStatus: string
+  isWaking: boolean
 }>()
 
 defineEmits<{
@@ -50,9 +51,11 @@ defineEmits<{
         color="success"
         variant="elevated"
         prepend-icon="mdi-power-sleep"
+        :disabled="isWaking"
+        :loading="isWaking"
         @click="$emit('wake')"
       >
-        Wake Host
+        {{ isWaking ? 'Waking up...' : 'Wake Host' }}
       </v-btn>
     </div>
   </div>
