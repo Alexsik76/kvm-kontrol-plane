@@ -64,7 +64,7 @@ const fetchNodeDetails = async () => {
     if (response.ok) {
       node.value = await response.json()
       if (node.value!.has_front_panel) {
-        fpConnect(nodeDomain.value, authStore.accessToken).catch((err) => {
+        fpConnect(nodeDomain.value, authStore.accessToken || '').catch((err) => {
           console.error('Front panel WebSocket connection failed:', err)
         })
       }
