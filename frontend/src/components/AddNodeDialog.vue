@@ -16,7 +16,8 @@ const newNode = ref({
   mediamtx_api_port: 30000,
   stream_name: 'kvm',
   mediamtx_user: '',
-  mediamtx_pass: ''
+  mediamtx_pass: '',
+  has_front_panel: false,
 })
 
 const machineInfoList = ref<{key: string, value: string}[]>([])
@@ -58,6 +59,7 @@ const submitNode = async () => {
       stream_name: newNode.value.stream_name,
       mediamtx_user: newNode.value.mediamtx_user,
       mediamtx_pass: newNode.value.mediamtx_pass,
+      has_front_panel: newNode.value.has_front_panel,
       ...(machineInfoObj && { machine_info: machineInfoObj })
     }
 
@@ -77,15 +79,16 @@ const submitNode = async () => {
     }
     
     dialogOpen.value = false
-    newNode.value = { 
-      name: '', 
-      internal_ip: '', 
-      tunnel_url: '', 
-      ws_port: 8080, 
-      mediamtx_api_port: 9997, 
+    newNode.value = {
+      name: '',
+      internal_ip: '',
+      tunnel_url: '',
+      ws_port: 8080,
+      mediamtx_api_port: 9997,
       stream_name: 'kvm',
       mediamtx_user: '',
-      mediamtx_pass: ''
+      mediamtx_pass: '',
+      has_front_panel: false,
     }
     machineInfoList.value = []
     emit('node-added') // Tell parent to refresh
@@ -139,6 +142,14 @@ const submitNode = async () => {
               <v-text-field v-model.number="newNode.mediamtx_api_port" label="MediaMTX WebRTC Port" type="number" variant="outlined" density="comfortable" required></v-text-field>
             </v-col>
           </v-row>
+
+          <v-checkbox
+            v-model="newNode.has_front_panel"
+            label="This node has a front-panel control module"
+            density="comfortable"
+            hide-details
+            class="mb-2"
+          ></v-checkbox>
 
           <div class="mt-4">
             <div class="d-flex align-center justify-space-between mb-2">
