@@ -41,7 +41,7 @@ class Settings(BaseSettings):
 
     # --- CORS ---
     # Accepts a comma-separated string from the env; validated into a list below
-    CORS_ORIGINS: str = "http://localhost:3000,https://kvm.lab.vn.ua"
+    CORS_ORIGINS: str = "http://localhost:3000;https://kvm.lab.vn.ua"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         """Return CORS_ORIGINS as a list of stripped origin strings."""
-        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        return [o.strip() for o in self.CORS_ORIGINS.split(";") if o.strip()]
 
     # --- Database ---
     DATABASE_URL: str  # required — no default; must be set in env
