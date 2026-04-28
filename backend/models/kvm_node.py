@@ -61,6 +61,11 @@ class KvmNode(SQLModel, table=True):
             default=NodeStatus.UNKNOWN,
         ),
     )
+    has_front_panel: bool = Field(
+        default=False,
+        nullable=False,
+        sa_column_kwargs={"server_default": sa.text("false")},
+    )
     machine_info: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
     screenshot: Optional[str] = Field(default=None, sa_column=Column(sa.Text))
     last_seen_at: Optional[datetime] = Field(

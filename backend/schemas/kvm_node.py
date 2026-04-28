@@ -50,8 +50,12 @@ class KvmNodeBase(SQLModel):
         description="Username for MediaMTX internal authentication."
     )
     mediamtx_pass: str = Field(
-        default="password", 
+        default="password",
         description="Password/Token for MediaMTX internal authentication."
+    )
+    has_front_panel: bool = Field(
+        default=False,
+        description="Whether this node has an RP2040 front-panel control module attached.",
     )
 
 
@@ -83,6 +87,7 @@ class KvmNodeUpdate(SQLModel):
     screenshot: Optional[str] = Field(
         None, description="Base64 encoded Data URL of the latest screenshot"
     )
+    has_front_panel: Optional[bool] = None
 
 
 class KvmNodeRead(KvmNodeBase):
