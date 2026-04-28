@@ -49,7 +49,8 @@ export function useFrontPanel() {
       socket.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data)
-          if (msg.type === 'led_status') {
+          // Pi broadcasts led_status as {"pwr": ..., "hdd": ...} without a type field
+          if (msg.pwr !== undefined || msg.hdd !== undefined) {
             if (msg.pwr !== undefined) pwrStatus.value = msg.pwr
             if (msg.hdd !== undefined) hddStatus.value = msg.hdd
           } else if (msg.type === 'ack') {
