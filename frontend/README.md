@@ -7,10 +7,10 @@ This is a modern web interface for remote server management via IP-KVM, built wi
 ### High-Performance Remote Control
 A custom input handling system captures and proxies keyboard and mouse events directly to the KVM node.
 
-- **Intelligent Mouse Scaling**: Automatically calculates the ratio between the video's stream resolution and its display size.
+- **Intelligent Mouse Scaling**: Automatically calculates the ratio between the video stream resolution and its display size.
 - **Event Coalescing & RAF Batching**: Consecutive events are merged and dispatched using `requestAnimationFrame` to ensure smooth performance.
 - **HID Protocol Mapping**: Maps JavaScript events to raw USB HID scancodes for BIOS/UEFI and OS compatibility.
-- **MODULAR ARCHITECTURE**: Logic is split into specialized units: `useFullscreen`, `useMouseInput`, and `useKeyboardInput` for better maintainability.
+- **Modular Architecture**: Logic is split into specialized units within `usePlayerInput` for better maintainability.
 
 ### Input Shortcuts & Logic
 Special handling for the Escape key and system shortcuts ensures both local control and remote system interaction:
@@ -25,9 +25,16 @@ Special handling for the Escape key and system shortcuts ensures both local cont
 - **Auto-Relock**: Clicking any panel action (like **Ctrl+Alt+Del**) or the close button automatically re-locks the mouse to the remote host.
 - **Exit**: **Hold ESC** for 2 seconds to exit fullscreen and release keyboard lock.
 
+### Front-Panel Control
+When a node has `has_front_panel` set to `true`, a dedicated control panel appears in the session sidebar. It connects directly to the node's `/ws/front_panel` WebSocket endpoint (bypassing the backend, same pattern as HID) and provides:
+
+- **PWR / HDD LED indicators** with live status (`on`/`off`/`blinking`/`active`/`idle`/`unknown`) updated every 100 ms from the RP2040 module.
+- **Power** button — sends a short press pulse.
+- **Reset** button — sends a reset pulse (with a confirmation dialog).
+- **Force off** button — sends a long-press pulse; requires a second click within 3 seconds to prevent accidental shutdown.
+
 ### Low-Latency Video Streaming
-Utilizes WebRTC for near-instant provides video feedback from the KVM node.
-- Automatic reconnection logic for both Video and HID channels.
+Utilizes WebRTC for near-instant video feedback from the KVM node.
 - Status overlays for monitoring connection quality and capture state.
 
 ## Technical Architecture
@@ -35,18 +42,20 @@ Utilizes WebRTC for near-instant provides video feedback from the KVM node.
 ### Tech Stack
 - **Framework**: Vue 3 (Composition API)
 - **Language**: TypeScript (Strict Mode)
-- **UI Blueprint**: Vuetify 4 (Material Design)
+- **UI Library**: Vuetify 3 (Material Design)
 - **State Management**: Pinia
 - **Build Tool**: Vite
 
 ### Key Composables
 - `useWebRTC`: Manages the RTCPeerConnection and video stream lifecycle.
-- `useHID`: Handles WebSocket communication for HID reports.
-- `usePlayerInput`: A clean coordinator orchestrating the modular input composables.
+- `useHID`: Handles WebSocket communication for HID reports. No automatic reconnection by design.
+- `usePlayerInput`: Orchestrates input capture, fullscreen, mouse, and keyboard handling.
+- `useFrontPanel`: Manages the WebSocket connection to `/ws/front_panel`, exposes reactive LED state (`pwrStatus`, `hddStatus`) and control methods (`powerPress`, `powerHold`, `reset`).
 
 ## Project Structure
-- `/src/components`: UI components including the WebRTC player and capture overlays.
-- `/src/composables`: Specialized logic for WebRTC, HID, and input processing.
+- `/src/components`: UI components including the WebRTC player, capture overlays, and `FrontPanelControls`.
+- `/src/composables`: Specialized logic for WebRTC, HID, input processing, and front-panel control.
+- `/src/types`: TypeScript interfaces (`KvmNode` and related types).
 - `/src/utils`: Helper functions for HID scancode mapping and Base64 encoding.
 - `/src/views`: Main application pages (Dashboard, Stream View, Login).
 
