@@ -20,6 +20,7 @@ const {
   isConnected: fpConnected,
   pwrStatus,
   hddStatus,
+  videoStatus,
   lastError: fpError,
   connect: fpConnect,
   disconnect: fpDisconnect,
@@ -63,11 +64,10 @@ const fetchNodeDetails = async () => {
 
     if (response.ok) {
       node.value = await response.json()
-      if (node.value!.has_front_panel) {
-        fpConnect(nodeDomain.value, authStore.accessToken || '').catch((err) => {
-          console.error('Front panel WebSocket connection failed:', err)
-        })
-      }
+      // Connect unconditionally — backend sends video_status regardless of front panel hardware
+      fpConnect(nodeDomain.value, authStore.accessToken || '').catch((err) => {
+        console.error('Front panel WebSocket connection failed:', err)
+      })
     } else {
       router.push({ name: 'dashboard' }) // Not found or no access
     }
@@ -126,6 +126,7 @@ onUnmounted(() => {
               :node-id="nodeId"
               :node-domain="nodeDomain"
               :node-ip="node?.internal_ip"
+              :video-status="videoStatus"
               @status-changed="handleStreamStatus"
               @capture-change="isHidCaptured = $event"
             />

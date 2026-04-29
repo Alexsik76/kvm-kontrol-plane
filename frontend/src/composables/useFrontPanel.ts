@@ -2,12 +2,14 @@ import { ref, shallowRef } from 'vue'
 
 type PwrStatus = 'unknown' | 'off' | 'on' | 'blinking'
 type HddStatus = 'unknown' | 'idle' | 'active'
+export type VideoStatus = 'unknown' | 'active' | 'inactive'
 
 export function useFrontPanel() {
   const ws = shallowRef<WebSocket | null>(null)
   const isConnected = ref(false)
   const pwrStatus = ref<PwrStatus>('unknown')
   const hddStatus = ref<HddStatus>('unknown')
+  const videoStatus = ref<VideoStatus>('unknown')
   const lastError = ref<string | null>(null)
 
   const connect = (nodeDomain: string, token: string): Promise<void> => {
@@ -40,6 +42,7 @@ export function useFrontPanel() {
         isConnected.value = false
         pwrStatus.value = 'unknown'
         hddStatus.value = 'unknown'
+        videoStatus.value = 'unknown'
         if (!settled) {
           settled = true
           reject(new Error('Front panel WebSocket closed before connecting'))
@@ -53,6 +56,10 @@ export function useFrontPanel() {
           if (msg.pwr !== undefined || msg.hdd !== undefined) {
             if (msg.pwr !== undefined) pwrStatus.value = msg.pwr
             if (msg.hdd !== undefined) hddStatus.value = msg.hdd
+          } else if (msg.type === 'video_status') {
+            if (msg.status === 'active' || msg.status === 'inactive') {
+              videoStatus.value = msg.status
+            }
           } else if (msg.type === 'ack') {
             console.debug('Front panel ack:', msg)
           } else if (msg.type === 'error') {
@@ -74,6 +81,7 @@ export function useFrontPanel() {
     isConnected.value = false
     pwrStatus.value = 'unknown'
     hddStatus.value = 'unknown'
+    videoStatus.value = 'unknown'
   }
 
   const send = (msg: object): void => {
@@ -95,5 +103,5 @@ export function useFrontPanel() {
     lastError.value = null
   }
 
-  return { isConnected, pwrStatus, hddStatus, lastError, connect, disconnect, powerPress, powerHold, reset, clearError }
+  return { isConnected, pwrStatus, hddStatus, videoStatus, lastError, connect, disconnect, powerPress, powerHold, reset, clearError }
 }

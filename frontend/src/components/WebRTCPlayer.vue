@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, toRef, onMounted, onBeforeUnmount } from 'vue'
+import type { VideoStatus } from '../composables/useFrontPanel'
 import { useWebRTC } from '../composables/useWebRTC'
 import { useHID } from '../composables/useHID'
 import { usePlayerInput } from '../composables/usePlayerInput'
@@ -10,6 +11,7 @@ import WebRTCStatusOverlay from './WebRTCStatusOverlay.vue'
 const props = defineProps<{
   nodeId: string
   nodeDomain: string
+  videoStatus?: VideoStatus
 }>()
 
 const emit = defineEmits<{
@@ -57,6 +59,12 @@ const {
 // === Watchers ===
 watch([streamStatus, connectionError], ([status, error]) => {
   emit('status-changed', { status: status as string, error: (error as string) || '' })
+})
+
+watch(() => props.videoStatus, (next, prev) => {
+  if (prev === 'inactive' && next === 'active' && (connectionError.value || streamStatus.value === 'Failed')) {
+    startStream()
+  }
 })
 
 // === Wake ===
@@ -141,6 +149,7 @@ defineExpose({ startCapture, stopCapture })
       :connection-error="connectionError || null"
       :stream-status="streamStatus"
       :is-waking="isWaking"
+      :video-status="props.videoStatus ?? 'unknown'"
       @retry="startStream"
       @wake="handleWake"
     />
