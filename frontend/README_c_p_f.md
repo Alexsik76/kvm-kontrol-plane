@@ -49,7 +49,7 @@ The `/ws/front_panel` channel carries two categories of messages:
 2. **Connecting** (`loading`) — spinner with the current stream status label.
 3. **Connection Error** (`connectionError`) — `mdi-video-off` with the error message, **Retry Connection**, and **Wake Host** buttons.
 
-When `videoStatus` transitions from `'inactive'` back to `'active'` and the stream is in a failed state, `WebRTCPlayer` automatically calls `startStream()` to reconnect without user interaction.
+When `videoStatus` transitions from `'inactive'` back to `'active'`, `WebRTCPlayer` unconditionally calls `startStream()` to reconnect. This is necessary because mediamtx does not close the WebRTC peer connection when it loses the video source — it simply stops sending frames, leaving the client with a frozen picture and no connection error. The guard-free reconnect ensures the stale session is torn down regardless of what `connectionError` or `streamStatus` report.
 
 ### Low-Latency Video Streaming
 Utilizes WebRTC for near-instant video feedback from the KVM node.

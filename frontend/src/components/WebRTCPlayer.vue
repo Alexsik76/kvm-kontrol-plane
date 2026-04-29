@@ -62,7 +62,7 @@ watch([streamStatus, connectionError], ([status, error]) => {
 })
 
 watch(() => props.videoStatus, (next, prev) => {
-  if (prev === 'inactive' && next === 'active' && (connectionError.value || streamStatus.value === 'Failed')) {
+  if (prev === 'inactive' && next === 'active') {
     startStream()
   }
 })
