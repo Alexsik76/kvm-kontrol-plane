@@ -102,5 +102,5 @@ export function useWebRTC(nodeId: Ref<string>) {
     if (peerConnection.value) peerConnection.value.close()
   })
 
-  return { videoRef, loading, connectionError, streamStatus, startStream }
+  return { videoRef, loading, connectionError, streamStatus, startStream, peerConnection }
 }

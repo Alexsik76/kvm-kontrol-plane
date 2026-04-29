@@ -6,6 +6,7 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
   const authStore = useAuthStore()
   const wsConnection = shallowRef<WebSocket | null>(null)
   const isHidConnected = ref(false)
+  const lastPong = shallowRef<{ id: number; receivedAt: number } | null>(null)
 
   const connectHID = () => {
     if (!nodeDomain.value) return
@@ -36,6 +37,10 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
     wsConnection.value.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        if (msg.type === 'pong') {
+          lastPong.value = { id: msg.data?.id, receivedAt: performance.now() };
+          return;
+        }
         if (msg.type === 'reset_hid') {
           console.warn('HID Server requested state reset (NACK)');
 
@@ -105,6 +110,7 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
 
   return {
     isHidConnected,
+    lastPong,
     sendHIDMessage,
     connectHID,
     wakeHost

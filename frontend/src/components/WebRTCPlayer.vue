@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, watch, toRef, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, toRef, onMounted, onBeforeUnmount } from 'vue'
 import type { VideoStatus } from '../composables/useFrontPanel'
 import { useWebRTC } from '../composables/useWebRTC'
 import { useHID } from '../composables/useHID'
 import { usePlayerInput } from '../composables/usePlayerInput'
+import { useDiagnostics } from '../composables/useDiagnostics'
 import { resetKeyboardState } from '../utils/hid'
 import WebRTCCaptureOverlay from './WebRTCCaptureOverlay.vue'
 import WebRTCStatusOverlay from './WebRTCStatusOverlay.vue'
+import DiagnosticsOverlay from './DiagnosticsOverlay.vue'
 
 const props = defineProps<{
   nodeId: string
@@ -27,14 +29,16 @@ const {
   loading,
   connectionError,
   streamStatus,
-  startStream
+  startStream,
+  peerConnection,
 } = useWebRTC(nodeId)
 
 const {
   isHidConnected,
   sendHIDMessage,
   connectHID,
-  wakeHost
+  wakeHost,
+  lastPong,
 } = useHID(nodeDomain, () => {
   // Reset local state when backend NACKs a write failure
   sendHIDMessage(resetKeyboardState())
@@ -87,6 +91,13 @@ const handleWake = async () => {
   snackbarVisible.value = true
   setTimeout(() => { isWaking.value = false }, 2000)
 }
+
+// === Diagnostics ===
+const debugEnabled = computed(() =>
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1'
+)
+
+const { metrics } = useDiagnostics(peerConnection, sendHIDMessage, lastPong, debugEnabled)
 
 // === Global Keydown for Wake ===
 const handleGlobalKeyDown = (_e: KeyboardEvent) => {
@@ -153,6 +164,8 @@ defineExpose({ startCapture, stopCapture })
       @retry="startStream"
       @wake="handleWake"
     />
+
+    <DiagnosticsOverlay v-if="debugEnabled" :metrics="metrics" />
 
     <v-snackbar
       v-model="snackbarVisible"
