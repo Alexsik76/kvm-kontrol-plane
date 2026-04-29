@@ -9,7 +9,7 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
 
   const connectHID = () => {
     if (!nodeDomain.value) return
-    
+
     // Always clear existing connection properly
     if (wsConnection.value) {
       wsConnection.value.onclose = null
@@ -20,14 +20,14 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
     const currentToken = authStore.accessToken
 
     const wsUrl = `wss://${nodeDomain.value}/ws/control?token=${currentToken}`
-    
+
     wsConnection.value = new WebSocket(wsUrl)
-    
+
     wsConnection.value.onopen = () => {
       isHidConnected.value = true
       console.log('HID WebSocket connected')
     }
-    
+
     wsConnection.value.onclose = () => {
       isHidConnected.value = false
       console.log('HID WebSocket closed. No automatic reconnection.')
@@ -38,7 +38,7 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
         const msg = JSON.parse(event.data);
         if (msg.type === 'reset_hid') {
           console.warn('HID Server requested state reset (NACK)');
-          
+
           // Clears local sets and generates { type: "keyboard", data: { modifiers: 0, keys: "" } }
           const resetMsg = resetKeyboardState();
           sendHIDMessage(resetMsg);
@@ -51,55 +51,18 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
     };
   }
 
-  const MSG_INTERVAL_MS = 10;
-  const messageQueue: any[] = [];
-  let isSendingQueue = false;
+  const sendHIDMessage = (msg: any) => {
+    const ws = wsConnection.value;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
-  const processQueue = () => {
-    if (messageQueue.length === 0) {
-      isSendingQueue = false;
+    // Backpressure: при перевантаженому сокеті дропаємо ТІЛЬКИ pure mouse moves
+    // (без натиснутих кнопок). Keyboard, mouse clicks, drag — ніколи не дропаємо.
+    if (msg.type === "mouse" && ws.bufferedAmount > 65536 && msg.data.buttons === 0) {
       return;
     }
-    
-    isSendingQueue = true;
-    const msg = messageQueue.shift();
-    
-    if (wsConnection.value?.readyState === WebSocket.OPEN) {
-      wsConnection.value.send(JSON.stringify(msg));
-    }
-    
-    setTimeout(processQueue, MSG_INTERVAL_MS);
+
+    ws.send(JSON.stringify(msg));
   };
-
-  const sendHIDMessage = (msg: any) => {
-    if (wsConnection.value?.readyState !== WebSocket.OPEN) return;
-
-    // Movement coalescing:
-    // If the latest message in the queue is a mouse movement and has the same button state,
-    // we can merge this new movement into it instead of creating a new queue entry.
-    // This handles both pure movement and dragging.
-    if (msg.type === "mouse" && messageQueue.length > 0) {
-      const lastMsg = messageQueue[messageQueue.length - 1];
-      if (lastMsg.type === "mouse" && lastMsg.data.buttons === msg.data.buttons) {
-        lastMsg.data.x += msg.data.x;
-        lastMsg.data.y += msg.data.y;
-        lastMsg.data.wheel += msg.data.wheel;
-        
-        // Constrain to int8 range [-127, 127]
-        // Note: we don't drop overflow here; it will just be capped by the backend 
-        // OR we could split it, but in 10ms intervals, >127 pixels is rare.
-        lastMsg.data.x = Math.max(-127, Math.min(127, lastMsg.data.x));
-        lastMsg.data.y = Math.max(-127, Math.min(127, lastMsg.data.y));
-        return;
-      }
-    }
-
-    // Always queue keyboard events, mouse clicks, and coalesced movements
-    messageQueue.push(msg);
-    if (!isSendingQueue) {
-      processQueue();
-    }
-  }
 
   watch(nodeDomain, (domain) => {
     if (domain) {
