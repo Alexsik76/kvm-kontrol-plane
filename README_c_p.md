@@ -44,7 +44,7 @@ The frontend dashboard will be available at `http://localhost:5173`.
 
 - **Centralized Dashboard**: View node status (Online/Offline) and last seen timestamps.
 - **WebRTC Streaming**: Instantly connect to specific KVM nodes with sub-second latency video.
-- **HID Proxying**: Keyboard and mouse events are captured in the browser and forwarded directly to the KVM node over a dedicated WebSocket connection.
+- **Direct HID Connection**: Keyboard and mouse events are captured in the browser and forwarded directly to the KVM node over a dedicated WebSocket connection.
 - **Front-Panel Control**: Optional RP2040-Zero module support — remotely press Power/Reset buttons and monitor PWR/HDD LED states in real time. Enabled per-node via the `has_front_panel` flag set in the dashboard.
 - **Cloudflare Tunnel Support**: Each node can be configured with a `tunnel_url` (e.g. `https://pi4.lab.vn.ua`) that overrides the internal IP for all backend → RPi calls.
 - **Per-Node MediaMTX Authentication**: Each node stores its own MediaMTX credentials (`mediamtx_user`, `mediamtx_pass`) for the WebRTC stream endpoint.

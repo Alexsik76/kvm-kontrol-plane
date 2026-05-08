@@ -55,6 +55,12 @@ When `videoStatus` transitions from `'inactive'` back to `'active'`, `WebRTCPlay
 Utilizes WebRTC for near-instant video feedback from the KVM node.
 - Status overlays for monitoring connection quality and capture state.
 
+### Real-Time Diagnostics
+A comprehensive diagnostics overlay (`DiagnosticsOverlay`) provides real-time telemetry. **To enable this feature, append `?debug=1` to the URL of the stream page** (e.g., `https://kvm.lab/nodes/{id}/stream?debug=1`).
+- **HID Network**: Measures RTT (Round Trip Time) and packet loss via application-level ping/pong over the WebSocket.
+- **WebRTC Network**: Tracks WebRTC RTT, bitrate, and jitter buffer delays.
+- **Video Decoding**: Monitors FPS, frame decode times, dropped frames, and current resolution.
+
 ## Technical Architecture
 
 ### Tech Stack
@@ -69,10 +75,11 @@ Utilizes WebRTC for near-instant video feedback from the KVM node.
 - `useHID`: Handles WebSocket communication for HID reports. No automatic reconnection by design.
 - `usePlayerInput`: Orchestrates input capture, fullscreen, mouse, and keyboard handling.
 - `useFrontPanel`: Manages the WebSocket connection to `/ws/front_panel`. Exposes reactive LED state (`pwrStatus`, `hddStatus`), HDMI signal state (`videoStatus`), and control methods (`powerPress`, `powerHold`, `reset`). Resets all state to `'unknown'` on disconnect.
+- `useDiagnostics`: Periodically polls WebRTC `getStats()` and calculates HID ping/pong times to provide reactive telemetry metrics.
 
 ## Project Structure
-- `/src/components`: UI components including the WebRTC player, capture overlays, and `FrontPanelControls`.
-- `/src/composables`: Specialized logic for WebRTC, HID, input processing, and front-panel control.
+- `/src/components`: UI components including the WebRTC player, capture overlays, `DiagnosticsOverlay`, and `FrontPanelControls`.
+- `/src/composables`: Specialized logic for WebRTC, HID, input processing, front-panel control, and diagnostics.
 - `/src/types`: TypeScript interfaces (`KvmNode` and related types).
 - `/src/utils`: Helper functions for HID scancode mapping and Base64 encoding.
 - `/src/views`: Main application pages (Dashboard, Stream View, Login).
