@@ -1,8 +1,8 @@
 import { ref, shallowRef, watch, onBeforeUnmount, type Ref } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import { useAuthedFetch } from './useAuthedFetch'
 
 export function useWebRTC(nodeId: Ref<string>) {
-  const authStore = useAuthStore()
+  const { authedFetch } = useAuthedFetch()
   const videoRef = ref<HTMLVideoElement | null>(null)
   const loading = ref(false)
   const connectionError = ref('')
@@ -38,12 +38,9 @@ export function useWebRTC(nodeId: Ref<string>) {
       peerConnection.value.onicecandidate = (event) => {
         if (event.candidate && nodeId.value && currentSessionUrl.value) {
           const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-          fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/signal/ice`, {
+          authedFetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/signal/ice`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authStore.accessToken}`
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               candidate: event.candidate.candidate,
               sdpMid: event.candidate.sdpMid,
@@ -69,12 +66,9 @@ export function useWebRTC(nodeId: Ref<string>) {
 
       // Signaling
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const response = await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/signal/offer`, {
+      const response = await authedFetch(`${apiBaseUrl}/api/v1/nodes/${nodeId.value}/signal/offer`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authStore.accessToken}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sdp: offer.sdp, type: offer.type })
       })
 

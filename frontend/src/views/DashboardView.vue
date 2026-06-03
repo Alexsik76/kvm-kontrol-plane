@@ -2,11 +2,13 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useAuthedFetch } from '../composables/useAuthedFetch'
 import AddNodeDialog from '../components/AddNodeDialog.vue'
 import NodeCard from '../components/NodeCard.vue'
 
 const authStore = useAuthStore()
 const router = useRouter()
+const { authedFetch } = useAuthedFetch()
 
 const nodes = ref<any[]>([])
 const loading = ref(true)
@@ -15,17 +17,7 @@ const fetchNodes = async () => {
   loading.value = true
   try {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    const response = await fetch(`${apiBaseUrl}/api/v1/nodes`, {
-      headers: {
-        'Authorization': `Bearer ${authStore.accessToken}`
-      }
-    })
-    
-    if (response.status === 401) {
-      handleLogout()
-      return
-    }
-    
+    const response = await authedFetch(`${apiBaseUrl}/api/v1/nodes`)
     if (response.ok) {
       nodes.value = await response.json()
     }
@@ -50,11 +42,8 @@ const performDelete = async () => {
   deleting.value = true
   try {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    const response = await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeToDelete.value.id}`, {
+    const response = await authedFetch(`${apiBaseUrl}/api/v1/nodes/${nodeToDelete.value.id}`, {
       method: 'DELETE',
-      headers: {
-         'Authorization': `Bearer ${authStore.accessToken}`
-      }
     })
     if (!response.ok) {
       throw new Error('Failed to delete node')

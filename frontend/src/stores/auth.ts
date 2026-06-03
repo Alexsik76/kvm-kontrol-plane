@@ -25,6 +25,30 @@ export const useAuthStore = defineStore('auth', {
       this.refreshToken = null
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
+    },
+    async refresh(): Promise<boolean> {
+      if (!this.refreshToken) {
+        this.logout()
+        return false
+      }
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/v1/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: this.refreshToken })
+        })
+        if (!response.ok) {
+          this.logout()
+          return false
+        }
+        const data = await response.json()
+        this.setTokens(data.access_token, data.refresh_token)
+        return true
+      } catch {
+        this.logout()
+        return false
+      }
     }
   }
 })

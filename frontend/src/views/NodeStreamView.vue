@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useAuthedFetch } from '../composables/useAuthedFetch'
 import WebRTCPlayer from '../components/WebRTCPlayer.vue'
 import FrontPanelControls from '../components/FrontPanelControls.vue'
 import { useFrontPanel } from '../composables/useFrontPanel'
@@ -10,6 +11,7 @@ import type { KvmNode } from '../types/node'
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const { authedFetch } = useAuthedFetch()
 
 const nodeId = route.params.id as string
 const node = ref<KvmNode | null>(null)
@@ -56,11 +58,7 @@ const handleStreamStatus = (payload: { status: string, error: string }) => {
 const fetchNodeDetails = async () => {
   try {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    const response = await fetch(`${apiBaseUrl}/api/v1/nodes/${nodeId}`, {
-      headers: {
-        'Authorization': `Bearer ${authStore.accessToken}`
-      }
-    })
+    const response = await authedFetch(`${apiBaseUrl}/api/v1/nodes/${nodeId}`)
 
     if (response.ok) {
       node.value = await response.json()
