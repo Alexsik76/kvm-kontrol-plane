@@ -24,6 +24,8 @@ export function useWebRTC(nodeId: Ref<string>) {
 
   const startStream = async () => {
     if (!nodeId.value || loading.value) return
+    const st = peerConnection.value?.connectionState
+    if (st === 'connected' || st === 'connecting' || st === 'new') return
     // Cancel any pending auto-reconnect timer — manual or triggered start takes over
     if (_reconnectTimer !== null) { clearTimeout(_reconnectTimer); _reconnectTimer = null }
     loading.value = true
