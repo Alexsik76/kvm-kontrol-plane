@@ -1,8 +1,8 @@
 import { ref, shallowRef, watch, onBeforeUnmount, type Ref } from 'vue'
 import { useAuthedFetch } from './useAuthedFetch'
 
-const MAX_RECONNECT = 15
-const RECONNECT_DELAY_MS = 500
+const MAX_RECONNECT = 5
+const RECONNECT_DELAY_MS = 3000
 
 export function useWebRTC(nodeId: Ref<string>) {
   const { authedFetch } = useAuthedFetch()
