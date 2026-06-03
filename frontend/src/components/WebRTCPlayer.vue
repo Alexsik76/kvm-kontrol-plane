@@ -65,8 +65,8 @@ watch([streamStatus, connectionError], ([status, error]) => {
   emit('status-changed', { status: status as string, error: (error as string) || '' })
 })
 
-watch(() => props.videoStatus, (next, prev) => {
-  if (prev === 'inactive' && next === 'active') {
+watch(() => props.videoStatus, (next) => {
+  if (next === 'active' && streamStatus.value !== 'Connected' && !loading.value) {
     startStream()
   }
 })
