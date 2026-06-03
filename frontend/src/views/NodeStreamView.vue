@@ -23,6 +23,7 @@ const {
   pwrStatus,
   hddStatus,
   videoStatus,
+  videoActiveSignal,
   lastError: fpError,
   connect: fpConnect,
   disconnect: fpDisconnect,
@@ -125,6 +126,7 @@ onUnmounted(() => {
               :node-domain="nodeDomain"
               :node-ip="node?.internal_ip"
               :video-status="videoStatus"
+              :video-active-signal="videoActiveSignal"
               @status-changed="handleStreamStatus"
               @capture-change="isHidCaptured = $event"
             />

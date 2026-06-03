@@ -14,6 +14,7 @@ const props = defineProps<{
   nodeId: string
   nodeDomain: string
   videoStatus?: VideoStatus
+  videoActiveSignal?: number
 }>()
 
 const emit = defineEmits<{
@@ -65,10 +66,25 @@ watch([streamStatus, connectionError], ([status, error]) => {
   emit('status-changed', { status: status as string, error: (error as string) || '' })
 })
 
+// Returns true when the WebRTC session cannot deliver video and should be restarted
+const sessionNeedsRestart = () => {
+  const state = peerConnection.value?.connectionState
+  return (
+    !loading.value &&
+    (!peerConnection.value || state === 'failed' || state === 'disconnected' || state === 'closed')
+  )
+}
+
+// Primary trigger: every video_status:active receipt, even if the value was already active.
+// Fires on WS reconnect because useFrontPanel resets videoStatus to 'unknown' on close
+// and the server sends the current status immediately on open (front_panel_ws_handler).
+watch(() => props.videoActiveSignal, () => {
+  if (sessionNeedsRestart()) startStream()
+})
+
+// Fallback: value-based watcher for cases where videoActiveSignal is not yet wired
 watch(() => props.videoStatus, (next) => {
-  if (next === 'active' && streamStatus.value !== 'Connected' && !loading.value) {
-    startStream()
-  }
+  if (next === 'active' && sessionNeedsRestart()) startStream()
 })
 
 // === Wake ===

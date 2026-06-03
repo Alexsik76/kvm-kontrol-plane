@@ -13,6 +13,7 @@ export function useFrontPanel() {
   const pwrStatus = ref<PwrStatus>('unknown')
   const hddStatus = ref<HddStatus>('unknown')
   const videoStatus = ref<VideoStatus>('unknown')
+  const videoActiveSignal = ref(0)  // increments on every video_status:active receipt
   const lastError = ref<string | null>(null)
 
   let _domain = ''
@@ -35,6 +36,7 @@ export function useFrontPanel() {
       } else if (msg.type === 'video_status') {
         if (msg.status === 'active' || msg.status === 'inactive') {
           videoStatus.value = msg.status
+          if (msg.status === 'active') videoActiveSignal.value++
         }
       } else if (msg.type === 'ack') {
         console.debug('Front panel ack:', msg)
@@ -145,5 +147,5 @@ export function useFrontPanel() {
     lastError.value = null
   }
 
-  return { isConnected, pwrStatus, hddStatus, videoStatus, lastError, connect, disconnect, powerPress, powerHold, reset, clearError }
+  return { isConnected, pwrStatus, hddStatus, videoStatus, videoActiveSignal, lastError, connect, disconnect, powerPress, powerHold, reset, clearError }
 }
