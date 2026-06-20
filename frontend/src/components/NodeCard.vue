@@ -59,6 +59,7 @@ const getStatusColor = (status: string) => {
           {{ node.status }}
         </v-chip>
         <v-btn
+          v-if="false"
           icon="mdi-delete"
           variant="outlined"
           color="error"

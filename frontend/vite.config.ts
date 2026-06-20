@@ -14,6 +14,8 @@ export default defineConfig(({ command, mode }) => {
     ? JSON.stringify('__VITE_API_BASE_URL_PLACEHOLDER__') 
     : JSON.stringify(env.VITE_API_BASE_URL || '');
 
+  const devTarget = env.VITE_DEV_TARGET || 'http://localhost:8080';
+
   return {
     plugins: [
       vue(),
@@ -35,12 +37,8 @@ export default defineConfig(({ command, mode }) => {
         usePolling: true,
       },
       proxy: {
-        '/api': {
-          target: env.VITE_API_BASE_URL || 'http://api:8000',
-          changeOrigin: true,
-          ws: true,
-          rewrite: (path) => (env.VITE_API_BASE_URL ? path : path), // keep /api if it's part of the target URL or handled by backend
-        },
+        '/api': { target: devTarget, changeOrigin: true },
+        '/ws':  { target: devTarget, ws: true, changeOrigin: true }
       },
     },
   };

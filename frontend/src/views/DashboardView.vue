@@ -85,7 +85,7 @@ onMounted(() => {
           <h2 class="text-h5 font-weight-medium">Registered Devices</h2>
           
           <!-- Extracted Add Node Component -->
-          <AddNodeDialog @node-added="fetchNodes" />
+          <AddNodeDialog v-if="false" @node-added="fetchNodes" />
         </div>
 
         <v-row v-if="loading && nodes.length === 0">

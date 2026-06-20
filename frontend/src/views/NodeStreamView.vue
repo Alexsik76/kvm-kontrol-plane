@@ -34,16 +34,7 @@ const {
 } = useFrontPanel()
 
 const nodeDomain = computed(() => {
-  if (!node.value) return ''
-  if (node.value.tunnel_url) {
-    try {
-      const url = new URL(node.value.tunnel_url)
-      return url.host
-    } catch {
-      return node.value.tunnel_url.replace(/^https?:\/\//, '')
-    }
-  }
-  return node.value.internal_ip || ''
+  return location.host
 })
 
 // Values passed up from WebRTCPlayer component

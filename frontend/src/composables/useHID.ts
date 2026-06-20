@@ -1,6 +1,8 @@
 import { ref, shallowRef, watch, onBeforeUnmount, type Ref } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { resetKeyboardState } from '../utils/hid'
+import { wsBase } from '../utils/origin'
+import { useAuthedFetch } from './useAuthedFetch'
 
 export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
   const authStore = useAuthStore()
@@ -20,7 +22,7 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
     // Ensure we are using the LATEST token from the store
     const currentToken = authStore.accessToken
 
-    const wsUrl = `wss://${nodeDomain.value}/ws/control?token=${currentToken}`
+    const wsUrl = `${wsBase()}/ws/control?token=${currentToken}`
 
     wsConnection.value = new WebSocket(wsUrl)
 
@@ -90,13 +92,10 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
   })
 
   const wakeHost = async (): Promise<{ ok: boolean; error?: string }> => {
-    if (!nodeDomain.value) return { ok: false, error: 'No node domain' }
     try {
-      const response = await fetch(`https://${nodeDomain.value}/ws/wake`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authStore.accessToken}`
-        }
+      const { authedFetch } = useAuthedFetch()
+      const response = await authedFetch(`${import.meta.env.VITE_API_BASE_URL || ''}/ws/wake`, {
+        method: 'POST'
       })
       if (!response.ok) {
         const text = await response.text().catch(() => '')

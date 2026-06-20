@@ -1,4 +1,5 @@
 import { ref, shallowRef } from 'vue'
+import { wsBase } from '../utils/origin'
 
 type PwrStatus = 'unknown' | 'off' | 'on' | 'blinking'
 type HddStatus = 'unknown' | 'idle' | 'active'
@@ -69,7 +70,7 @@ export function useFrontPanel() {
       ws.value = null
     }
 
-    const socket = new WebSocket(`wss://${_domain}/ws/front_panel?token=${_token}`)
+    const socket = new WebSocket(`${wsBase()}/ws/front_panel?token=${_token}`)
     ws.value = socket
 
     // Prevent double-settle from onerror+onclose firing in sequence

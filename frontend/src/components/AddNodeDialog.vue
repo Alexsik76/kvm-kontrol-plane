@@ -122,7 +122,7 @@ const submitNode = async () => {
         <v-form :disabled="loading">
           <v-text-field v-model="newNode.name" label="Node Name" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. Server-Room-Rack-1"></v-text-field>
           <v-text-field v-model="newNode.internal_ip" label="Internal IP" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. 10.8.0.10"></v-text-field>
-          <v-text-field v-model="newNode.tunnel_url" label="Tunnel URL (Cloudflare)" variant="outlined" density="comfortable" class="mb-2" hint="e.g. https://pi4.lab.vn.ua"></v-text-field>
+          <v-text-field v-model="newNode.tunnel_url" label="Tunnel URL (Cloudflare)" variant="outlined" density="comfortable" class="mb-2"></v-text-field>
           <v-text-field v-model="newNode.stream_name" label="Stream Name (MediaMTX Path)" variant="outlined" density="comfortable" class="mb-2" required hint="e.g. kvm"></v-text-field>
 
           <v-row mb-0>
