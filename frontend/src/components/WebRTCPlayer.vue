@@ -12,7 +12,6 @@ import DiagnosticsOverlay from './DiagnosticsOverlay.vue'
 
 const props = defineProps<{
   nodeId: string
-  nodeDomain: string
   videoStatus?: VideoStatus
   videoActiveSignal?: number
 }>()
@@ -23,7 +22,6 @@ const emit = defineEmits<{
 }>()
 
 const nodeId = toRef(props, 'nodeId')
-const nodeDomain = toRef(props, 'nodeDomain')
 
 const {
   videoRef,
@@ -40,7 +38,7 @@ const {
   connectHID,
   wakeHost,
   lastPong,
-} = useHID(nodeDomain, () => {
+} = useHID(() => {
   // Reset local state when backend NACKs a write failure
   sendHIDMessage(resetKeyboardState())
 })

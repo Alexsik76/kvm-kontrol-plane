@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useAuthedFetch } from '../composables/useAuthedFetch'
@@ -33,10 +33,6 @@ const {
   clearError: fpClearError,
 } = useFrontPanel()
 
-const nodeDomain = computed(() => {
-  return location.host
-})
-
 // Values passed up from WebRTCPlayer component
 const streamStatus = ref('Connecting...')
 const connectionError = ref('')
@@ -55,7 +51,7 @@ const fetchNodeDetails = async () => {
     if (response.ok) {
       node.value = await response.json()
       // Connect unconditionally — backend sends video_status regardless of front panel hardware
-      fpConnect(nodeDomain.value, authStore.accessToken || '').catch((err) => {
+      fpConnect(authStore.accessToken || '').catch((err) => {
         console.error('Front panel WebSocket connection failed:', err)
       })
     } else {
@@ -114,8 +110,6 @@ onUnmounted(() => {
           <v-col cols="12" md="8" lg="9" class="d-flex flex-column h-100">
             <WebRTCPlayer
               :node-id="nodeId"
-              :node-domain="nodeDomain"
-              :node-ip="node?.internal_ip"
               :video-status="videoStatus"
               :video-active-signal="videoActiveSignal"
               @status-changed="handleStreamStatus"

@@ -3,16 +3,10 @@ import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
-  // During build (production), we bake in a unique placeholder string.
-  // The Docker entrypoint (sed) will replace this placeholder with the actual
-  // environment variable at container startup.
-  // During dev, we use the actual env variable (if provided) or fallback to empty string (which uses the relative proxy).
-  const apiBaseUrl = command === 'build' 
-    ? JSON.stringify('__VITE_API_BASE_URL_PLACEHOLDER__') 
-    : JSON.stringify(env.VITE_API_BASE_URL || '');
+  const apiBaseUrl = JSON.stringify(env.VITE_API_BASE_URL || '');
 
   const devTarget = env.VITE_DEV_TARGET || 'http://localhost:8080';
 

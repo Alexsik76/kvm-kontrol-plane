@@ -1,18 +1,16 @@
-import { ref, shallowRef, watch, onBeforeUnmount, type Ref } from 'vue'
+import { ref, shallowRef, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { resetKeyboardState } from '../utils/hid'
 import { wsBase } from '../utils/origin'
 import { useAuthedFetch } from './useAuthedFetch'
 
-export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
+export function useHID(onReset?: () => void) {
   const authStore = useAuthStore()
   const wsConnection = shallowRef<WebSocket | null>(null)
   const isHidConnected = ref(false)
   const lastPong = shallowRef<{ id: number; receivedAt: number } | null>(null)
 
   const connectHID = () => {
-    if (!nodeDomain.value) return
-
     // Always clear existing connection properly
     if (wsConnection.value) {
       wsConnection.value.onclose = null
@@ -71,17 +69,9 @@ export function useHID(nodeDomain: Ref<string>, onReset?: () => void) {
     ws.send(JSON.stringify(msg));
   };
 
-  watch(nodeDomain, (domain) => {
-    if (domain) {
-      connectHID()
-    } else {
-      if (wsConnection.value) {
-        wsConnection.value.close()
-        wsConnection.value = null
-      }
-      isHidConnected.value = false
-    }
-  }, { immediate: true })
+  onMounted(() => {
+    connectHID()
+  })
 
   onBeforeUnmount(() => {
     if (wsConnection.value) {

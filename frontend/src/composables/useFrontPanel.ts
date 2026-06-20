@@ -17,7 +17,6 @@ export function useFrontPanel() {
   const videoActiveSignal = ref(0)  // increments on every video_status:active receipt
   const lastError = ref<string | null>(null)
 
-  let _domain = ''
   let _token = ''
   let _stopped = true
   let _attempt = 0
@@ -101,11 +100,10 @@ export function useFrontPanel() {
     socket.onmessage = _onMessage
   }
 
-  const connect = (nodeDomain: string, token: string): Promise<void> => {
+  const connect = (token: string): Promise<void> => {
     _stopped = false
     _attempt = 0
     _clearTimer()
-    _domain = nodeDomain
     _token = token
     return new Promise((resolve, reject) => {
       _openSocket((ok) => {
