@@ -1,53 +1,90 @@
 # IP-KVM Control Plane
 
-A modern, web-based control plane for managing a fleet of Raspberry Pi-based IP-KVM devices. It provides a centralized dashboard for connecting to KVM nodes via low-latency WebRTC streams, monitoring their status, and organizing device hardware specifications.
+A modern web-based control plane for managing a fleet of Raspberry Pi-based IP-KVM devices. It provides a centralized dashboard for connecting to KVM nodes via low-latency WebRTC streams, monitoring device status, and managing hardware configurations.
+
+## Architecture
+
+The system consists of a web frontend, a central backend control plane, and distributed KVM nodes (Raspberry Pi devices).
+
+```mermaid
+flowchart LR
+    Browser["Browser (Vue 3 SPA)"]
+    Backend["Control Plane API (FastAPI)"]
+    Node["KVM Node (Raspberry Pi)"]
+
+    Browser -- "HTTP REST (Node Management)" --> Backend
+    Backend -- "HTTP REST (Signaling & Proxy)" --> Node
+    Browser -- "WebSocket (HID Events - Bypasses Backend)" --> Node
+    Browser -- "WebRTC (Video Stream from MediaMTX)" --> Node
+```
+
+### Communication Channels
+- **HTTP REST**: Used for node management, user authentication, and WebRTC signaling between the frontend, backend API, and KVM nodes.
+- **WebSocket**: Direct low-latency connection from the browser to the KVM node for real-time HID (keyboard and mouse) events, bypassing the backend.
+- **WebRTC**: Low-latency video stream sent directly from MediaMTX running on the KVM node to the browser.
+
+## Related Repositories
+
+- [kvm_engine_py](https://github.com/Alexsik76/kvm_engine_py) — Node software (C++ video engine, Python orchestrator, RP2040 firmware).
+- [kvm_desktop](https://github.com/Alexsik76/kvm_desktop) — Native desktop client application.
+- [kvm_control_app](https://github.com/Alexsik76/kvm_control_app) — Native C++ control application component.
 
 ## Project Structure
 
-The project is split into two main components:
-
-- **Backend (`/backend`)**: A REST API built with Python, FastAPI, and SQLAlchemy. It handles KVM node management (CRUD operations), database persistence (PostgreSQL via Docker), WebRTC signaling (interfacing with MediaMTX), and periodic node health polling.
-- **Frontend (`/frontend`)**: A reactive single-page application built with Vue 3, Vite, Vuetify 3, and Pinia. It offers a dark-themed, responsive dashboard, WebRTC video player interface, and a front-panel control panel.
+- **Backend (`/backend`)**: REST API built with Python, FastAPI, SQLAlchemy, and Alembic. Handles node metadata, JWT authentication, WebRTC signaling, and periodic health checks.
+- **Frontend (`/frontend`)**: Single-page application built with Vue 3, Vite, Vuetify 3, and Pinia. Provides a responsive dashboard, WebRTC video player, and front-panel control interface.
 
 ## Quick Start
 
-### 1. Start the Backend Infrastructure
+### Prerequisites
 
-The backend and the PostgreSQL database are fully dockerized.
+Make sure you have installed the following software:
+- **Python**: Version 3.10 or higher
+- **Node.js**: Version 18 or higher
+- **Docker & Docker Compose**: For running backend services and PostgreSQL
 
-```bash
-cd backend
-docker compose up -d
-```
+### 1. Start the Backend Service
 
-After the first start (or after pulling an update that includes new migrations), apply any pending schema changes:
+1. Navigate to the `backend` directory:
+   ```bash
+   cd backend
+   ```
+2. Copy the environment variables example file to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+3. Start the containers:
+   ```bash
+   docker compose up -d
+   ```
+4. Run database migrations:
+   ```bash
+   docker compose exec backend alembic upgrade head
+   ```
 
-```bash
-docker compose exec backend alembic upgrade head
-```
+The backend API will be available at `http://localhost:8000`.
 
-The API will be available at `http://localhost:8000`.
+### 2. Start the Frontend Application
 
-### 2. Start the Frontend Development Server
-
-Ensure you have Node.js installed.
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
+1. Navigate to the `frontend` directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
 The frontend dashboard will be available at `http://localhost:5173`.
 
-## Features
+## Screenshots
 
-- **Centralized Dashboard**: View node status (Online/Offline) and last seen timestamps.
-- **WebRTC Streaming**: Instantly connect to specific KVM nodes with sub-second latency video.
-- **Direct HID Connection**: Keyboard and mouse events are captured in the browser and forwarded directly to the KVM node over a dedicated WebSocket connection.
-- **Front-Panel Control**: Optional RP2040-Zero module support — remotely press Power/Reset buttons and monitor PWR/HDD LED states in real time. Enabled per-node via the `has_front_panel` flag set in the dashboard.
-- **Cloudflare Tunnel Support**: Each node can be configured with a `tunnel_url` (e.g. `https://pi4.lab.vn.ua`) that overrides the internal IP for all backend → RPi calls.
-- **Per-Node MediaMTX Authentication**: Each node stores its own MediaMTX credentials (`mediamtx_user`, `mediamtx_pass`) for the WebRTC stream endpoint.
-- **Dynamic Snapshots**: Displays a responsive 16:9 thumbnail of the KVM node's screen.
-- **Custom Hardware Specs**: Attach and display custom metadata (e.g. CPU, Location, Hypervisor) for each device.
-- **Secure Access**: JWT-based authentication for the control panel.
+<!-- Screenshot placeholders will be added here -->
+
+## Project Status
+
+This is an academic project (Bachelor's qualification thesis). It operates on a dedicated test bench and is not intended for commercial production use.
