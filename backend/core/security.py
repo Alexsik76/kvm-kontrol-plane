@@ -24,8 +24,8 @@ References) claim is reserved in the TokenPayload for this purpose.
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
-from jose import JWTError, jwt
 import bcrypt
+from jose import JWTError, jwt
 
 from core.config import settings
 from core.token_schemas import TokenPayload

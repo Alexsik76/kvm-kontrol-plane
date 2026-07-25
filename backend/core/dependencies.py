@@ -29,8 +29,8 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
-from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from core.security import verify_token
 from db.session import get_db
@@ -77,8 +77,8 @@ async def get_current_user(
 
     try:
         payload = verify_token(token, expected_type="access")
-    except JWTError:
-        raise credentials_exc
+    except JWTError as err:
+        raise credentials_exc from err
 
     user_id: str = payload.sub
     result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))

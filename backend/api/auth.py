@@ -11,6 +11,7 @@ Endpoints
 """
 
 import logging
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -93,10 +94,8 @@ async def refresh(
 
     try:
         payload = verify_token(body.refresh_token, expected_type="refresh")
-    except JWTError:
-        raise credentials_exc
-
-    import uuid
+    except JWTError as err:
+        raise credentials_exc from err
 
     result = await db.execute(select(User).where(User.id == uuid.UUID(payload.sub)))
     user: User | None = result.scalars().first()

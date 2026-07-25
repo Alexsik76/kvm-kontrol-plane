@@ -5,15 +5,14 @@ WebRTC signaling router — relays SDP offers and ICE candidates from the browse
 to the MediaMTX instance running on the Raspberry Pi.
 """
 
-import logging
 import base64
+import logging
 from typing import Annotated
 from urllib.parse import urlparse
 
-from fastapi import APIRouter, Depends, HTTPException, status
 import httpx
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from core.config import settings
 from core.dependencies import require_node_access
 from models.kvm_node import KvmNode
 from schemas.signaling import ICECandidate, SDPAnswer, SDPOffer
@@ -43,11 +42,11 @@ async def signal_offer(
     """Forward an SDP offer to MediaMTX (WHEP) and return the SDP answer."""
     try:
         mediamtx_url = get_node_http_url(node)
-    except Exception:
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal error building node URL",
-        )
+        ) from exc
 
     headers = {"Content-Type": "application/sdp"}
     headers.update(_get_auth_header(node))
@@ -62,7 +61,12 @@ async def signal_offer(
             )
             
             if response.status_code not in (200, 201):
-                logger.error("MediaMTX returned error %s for URL %s: %s", response.status_code, mediamtx_url, response.text)
+                logger.error(
+                    "MediaMTX returned error %s for URL %s: %s",
+                    response.status_code,
+                    mediamtx_url,
+                    response.text,
+                )
                 raise HTTPException(status_code=502, detail="Streaming server rejected the offer")
 
             # Extract session URL from Location header (critical for Trickle ICE)
@@ -77,8 +81,16 @@ async def signal_offer(
             
             return SDPAnswer(sdp=response.text, type="answer", session_url=session_url)
         except httpx.RequestError as exc:
-            logger.error("Network error connecting to node %s at %s: %s", node.id, mediamtx_url, exc)
-            raise HTTPException(status_code=502, detail="KVM Node unreachable via tunnel")
+            logger.error(
+                "Network error connecting to node %s at %s: %s",
+                node.id,
+                mediamtx_url,
+                exc,
+            )
+            raise HTTPException(
+                status_code=502,
+                detail="KVM Node unreachable via tunnel",
+            ) from exc
 
 @router.post(
     "/nodes/{node_id}/signal/ice",

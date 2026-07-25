@@ -6,7 +6,8 @@ SQLAlchemy ORM model for the ``users`` table.
 
 import uuid
 from datetime import UTC, datetime
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
+
 import sqlalchemy as sa
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -17,7 +18,7 @@ if TYPE_CHECKING:
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4, primary_key=True)
+    id: uuid.UUID | None = Field(default_factory=uuid.uuid4, primary_key=True)
     username: str = Field(max_length=64, unique=True, nullable=False, index=True)
     email: str = Field(max_length=255, unique=True, nullable=False, index=True)
     hashed_password: str = Field(max_length=255, nullable=False)
@@ -28,7 +29,7 @@ class User(SQLModel, table=True):
         sa_column=sa.Column(sa.DateTime(timezone=True), nullable=False),
     )
 
-    node_permissions: List["UserNodePermission"] = Relationship(
+    node_permissions: list["UserNodePermission"] = Relationship(
         back_populates="user",
         sa_relationship_kwargs={
             "cascade": "all, delete-orphan",

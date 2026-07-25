@@ -1,5 +1,7 @@
 # IP-KVM Control Plane
 
+![CI](https://github.com/Alexsik76/kvm-kontrol-plane/actions/workflows/ci.yml/badge.svg)
+
 A modern web-based control plane for managing a fleet of Raspberry Pi-based IP-KVM devices. It provides a centralized dashboard for connecting to KVM nodes via low-latency WebRTC streams, monitoring device status, and managing hardware configurations.
 
 ## Architecture

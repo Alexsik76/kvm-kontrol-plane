@@ -6,9 +6,9 @@ their availability and updates the `status` and `last_seen_at` fields in the DB.
 """
 
 import asyncio
-import logging
 import base64
-from datetime import datetime, timezone
+import logging
+from datetime import UTC, datetime
 
 import httpx
 from sqlmodel import select
@@ -89,7 +89,7 @@ class NodeHealthService:
         previous_status = node.status
         if is_online:
             node.status = NodeStatus.ONLINE
-            node.last_seen_at = datetime.now(timezone.utc)
+            node.last_seen_at = datetime.now(UTC)
         else:
             node.status = NodeStatus.OFFLINE
 

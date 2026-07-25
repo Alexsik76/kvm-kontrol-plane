@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class SDPOffer(BaseModel):
     sdp: str
     type: str

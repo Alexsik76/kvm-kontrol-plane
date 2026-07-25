@@ -1,6 +1,8 @@
 from __future__ import annotations
-from models.kvm_node import KvmNode
+
 from core.config import settings
+from models.kvm_node import KvmNode
+
 
 def _effective_base_url(node: KvmNode) -> str | None:
     if node.tunnel_url and node.tunnel_url.strip():

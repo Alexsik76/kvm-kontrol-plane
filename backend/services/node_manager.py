@@ -9,16 +9,16 @@ All functions accept an AsyncSession injected by the FastAPI Depends chain.
 """
 
 import uuid
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
-from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from models.kvm_node import KvmNode
 from schemas.kvm_node import KvmNodeCreate, KvmNodeUpdate
 
 
-async def get_node(db: AsyncSession, node_id: uuid.UUID) -> Optional[KvmNode]:
+async def get_node(db: AsyncSession, node_id: uuid.UUID) -> KvmNode | None:
     """Fetch a single KVM node by primary key; return None if not found."""
     result = await db.execute(select(KvmNode).where(KvmNode.id == node_id))
     return result.scalars().first()

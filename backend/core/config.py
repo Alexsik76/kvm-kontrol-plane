@@ -11,7 +11,6 @@ Usage
 """
 
 from functools import lru_cache
-from typing import List
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -49,7 +48,7 @@ class Settings(BaseSettings):
         return v
 
     @property
-    def cors_origins_list(self) -> List[str]:
+    def cors_origins_list(self) -> list[str]:
         """Return CORS_ORIGINS as a list of stripped origin strings."""
         return [o.strip() for o in self.CORS_ORIGINS.split(";") if o.strip()]
 

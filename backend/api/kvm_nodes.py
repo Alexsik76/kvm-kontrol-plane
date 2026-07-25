@@ -15,10 +15,10 @@ Endpoints
 """
 
 import uuid
-from typing import Annotated, List
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
 import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.config import settings
 from core.dependencies import CurrentUser, SessionDep, require_node_access
@@ -41,13 +41,13 @@ def _require_superuser(current_user: CurrentUser) -> User:
     return current_user
 
 
-@router.get("", response_model=List[KvmNodeRead], summary="List all KVM nodes.")
+@router.get("", response_model=list[KvmNodeRead], summary="List all KVM nodes.")
 async def list_nodes(
     db: SessionDep,
     _current_user: CurrentUser,
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
-) -> List[KvmNodeRead]:
+) -> list[KvmNodeRead]:
     """Return a paginated list of KVM nodes the calling user may see.
 
     Note: This endpoint currently returns all nodes.  A future enhancement
@@ -152,18 +152,18 @@ async def wake_node(
             response = await client.post(url)
             response.raise_for_status()
             return response.json()
-        except httpx.RequestError:
+        except httpx.RequestError as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail="Could not reach the KVM node's control server.",
-            )
+            ) from exc
         except httpx.HTTPStatusError as exc:
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=f"KVM node control error: HTTP {exc.response.status_code}",
-            )
-        except Exception:
+            ) from exc
+        except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Unexpected error sending wake signal",
-            )
+            ) from exc

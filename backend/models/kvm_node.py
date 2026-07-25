@@ -6,8 +6,8 @@ SQLAlchemy ORM model for the ``kvm_nodes`` table.
 
 import uuid
 from datetime import UTC, datetime
-from enum import Enum as PyEnum
-from typing import Optional, List, TYPE_CHECKING
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from models.user_node_permission import UserNodePermission
 
 
-class NodeStatus(str, PyEnum):
+class NodeStatus(StrEnum):
     ONLINE = "online"
     OFFLINE = "offline"
     UNKNOWN = "unknown"
@@ -29,7 +29,7 @@ class KvmNode(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(max_length=64, unique=True, nullable=False)
     internal_ip: str = Field(max_length=45, nullable=False)
-    tunnel_url: Optional[str] = Field(
+    tunnel_url: str | None = Field(
         default=None,
         sa_column=Column(sa.String(255), nullable=True),
     )
@@ -66,9 +66,9 @@ class KvmNode(SQLModel, table=True):
         nullable=False,
         sa_column_kwargs={"server_default": sa.text("false")},
     )
-    machine_info: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
-    screenshot: Optional[str] = Field(default=None, sa_column=Column(sa.Text))
-    last_seen_at: Optional[datetime] = Field(
+    machine_info: dict | None = Field(default=None, sa_column=Column(JSONB))
+    screenshot: str | None = Field(default=None, sa_column=Column(sa.Text))
+    last_seen_at: datetime | None = Field(
         default=None, sa_column=Column(sa.DateTime(timezone=True))
     )
     created_at: datetime = Field(
@@ -76,7 +76,7 @@ class KvmNode(SQLModel, table=True):
         sa_column=Column(sa.DateTime(timezone=True), nullable=False),
     )
 
-    user_permissions: List["UserNodePermission"] = Relationship(
+    user_permissions: list["UserNodePermission"] = Relationship(
         back_populates="node",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )

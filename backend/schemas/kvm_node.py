@@ -1,20 +1,19 @@
-from __future__ import annotations
-
 """
 schemas/kvm_node.py
 
 Pydantic models for KVM node management API endpoints.
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 
 from sqlmodel import Field, SQLModel
 
 
-class NodeStatus(str, Enum):
+class NodeStatus(StrEnum):
     """Possible health states for a KVM node."""
 
     ONLINE = "online"
@@ -34,7 +33,7 @@ class KvmNodeBase(SQLModel):
         ...,
         description="Fallback VPN/LAN IP address of the Raspberry Pi.",
     )
-    tunnel_url: Optional[str] = Field(
+    tunnel_url: str | None = Field(
         default=None,
         max_length=255,
         description="Cloudflare Tunnel HTTPS base URL (e.g. https://pi4.lab.vn.ua). "
@@ -62,7 +61,7 @@ class KvmNodeBase(SQLModel):
 class KvmNodeCreate(KvmNodeBase):
     """Request body for creating a new KVM node."""
 
-    machine_info: Optional[dict] = Field(
+    machine_info: dict | None = Field(
         default=None,
         description="Arbitrary JSON metadata describing the node's hardware/specs.",
     )
@@ -71,23 +70,23 @@ class KvmNodeCreate(KvmNodeBase):
 class KvmNodeUpdate(SQLModel):
     """Request body for partial update — all fields are optional."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=64)
-    internal_ip: Optional[str] = None
-    tunnel_url: Optional[str] = Field(
+    name: str | None = Field(None, min_length=1, max_length=64)
+    internal_ip: str | None = None
+    tunnel_url: str | None = Field(
         None,
         max_length=255,
         description="Cloudflare Tunnel HTTPS base URL. Set to empty string to clear.",
     )
-    ws_port: Optional[int] = Field(None, ge=1, le=65535)
-    mediamtx_api_port: Optional[int] = Field(None, ge=1, le=65535)
-    stream_name: Optional[str] = Field(None, min_length=1, max_length=64)
-    mediamtx_user: Optional[str] = Field(None, max_length=64)
-    mediamtx_pass: Optional[str] = Field(None, max_length=64)
-    machine_info: Optional[dict] = None
-    screenshot: Optional[str] = Field(
+    ws_port: int | None = Field(None, ge=1, le=65535)
+    mediamtx_api_port: int | None = Field(None, ge=1, le=65535)
+    stream_name: str | None = Field(None, min_length=1, max_length=64)
+    mediamtx_user: str | None = Field(None, max_length=64)
+    mediamtx_pass: str | None = Field(None, max_length=64)
+    machine_info: dict | None = None
+    screenshot: str | None = Field(
         None, description="Base64 encoded Data URL of the latest screenshot"
     )
-    has_front_panel: Optional[bool] = None
+    has_front_panel: bool | None = None
 
 
 class KvmNodeRead(KvmNodeBase):
@@ -95,9 +94,9 @@ class KvmNodeRead(KvmNodeBase):
 
     id: uuid.UUID
     status: NodeStatus
-    machine_info: Optional[dict] = None
-    screenshot: Optional[str] = None
-    last_seen_at: Optional[datetime]
+    machine_info: dict | None = None
+    screenshot: str | None = None
+    last_seen_at: datetime | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -108,6 +107,6 @@ class NodeStatusRead(SQLModel):
 
     id: uuid.UUID
     status: NodeStatus
-    last_seen_at: Optional[datetime]
+    last_seen_at: datetime | None
 
     model_config = {"from_attributes": True}
