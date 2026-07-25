@@ -85,7 +85,12 @@ The frontend dashboard will be available at `http://localhost:5173`.
 
 ## Screenshots
 
-<!-- Screenshot placeholders will be added here -->
+![Web client with the remote screen, diagnostics overlay and front-panel controls](docs/img/kvm_web_client.png)
+
+The web client shows the remote screen over WebRTC. The diagnostics overlay
+(enabled with `?debug=1`) reports HID round-trip time, WebRTC round-trip
+time, decode time, frame rate and bitrate. The sidebar holds the power
+controls and the front-panel LED state.
 
 ## Project Status
 
